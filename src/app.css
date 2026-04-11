@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@source "./**/*.{html,svelte,ts,js}";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--color-surface: var(--color-slate-50);
+	--color-surface-elevated: var(--color-white);
+	--color-fg: var(--color-slate-900);
+	--color-fg-muted: var(--color-slate-500);
+	--color-border: var(--color-slate-200);
+
+	--color-accent: var(--color-teal-600);
+	--color-accent-fg: var(--color-white);
+
+	--color-success: var(--color-emerald-600);
+	--color-warning: var(--color-amber-500);
+	--color-danger: var(--color-red-600);
+	--color-info: var(--color-sky-500);
+
+	--radius-card: 0.5rem;
+	--radius-button: 0.375rem;
+}
+
+/* Dark mode fires when the system prefers dark UNLESS the user forced light. */
+@media (prefers-color-scheme: dark) {
+	:root:not(.light) {
+		--color-surface: var(--color-slate-950);
+		--color-surface-elevated: var(--color-slate-900);
+		--color-fg: var(--color-slate-50);
+		--color-fg-muted: var(--color-slate-400);
+		--color-border: var(--color-slate-800);
+
+		--color-accent: var(--color-teal-400);
+		--color-accent-fg: var(--color-slate-950);
+	}
+}
+
+/* User-forced dark (set by future toggle). */
+:root.dark {
+	--color-surface: var(--color-slate-950);
+	--color-surface-elevated: var(--color-slate-900);
+	--color-fg: var(--color-slate-50);
+	--color-fg-muted: var(--color-slate-400);
+	--color-border: var(--color-slate-800);
+
+	--color-accent: var(--color-teal-400);
+	--color-accent-fg: var(--color-slate-950);
+}
+
+@layer base {
+	html {
+		background-color: var(--color-surface);
+		color: var(--color-fg);
+	}
+
+	body {
+		font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+		-webkit-font-smoothing: antialiased;
+		min-height: 100dvh;
+	}
+}
