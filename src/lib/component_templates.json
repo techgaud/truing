@@ -1,0 +1,94 @@
+{
+	"road_bike": {
+		"label": "Road bike",
+		"components": [
+			{ "type": "chainring", "default_name": "Chainring" },
+			{ "type": "tire_road", "default_name": "Front tire" },
+			{ "type": "tire_road", "default_name": "Rear tire" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Front brake pads" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Rear brake pads" },
+			{ "type": "brake_rotor", "default_name": "Front brake rotor" },
+			{ "type": "brake_rotor", "default_name": "Rear brake rotor" },
+			{ "type": "mineral_oil_shimano", "default_name": "Brake fluid" },
+			{ "type": "bar_tape", "default_name": "Bar tape" }
+		]
+	},
+	"gravel_bike": {
+		"label": "Gravel bike",
+		"components": [
+			{ "type": "chainring", "default_name": "Chainring" },
+			{ "type": "tire_gravel", "default_name": "Front tire" },
+			{ "type": "tire_gravel", "default_name": "Rear tire" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Front brake pads" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Rear brake pads" },
+			{ "type": "brake_rotor", "default_name": "Front brake rotor" },
+			{ "type": "brake_rotor", "default_name": "Rear brake rotor" },
+			{ "type": "mineral_oil_shimano", "default_name": "Brake fluid" },
+			{ "type": "tubeless_sealant_standard", "default_name": "Tubeless sealant" },
+			{ "type": "bar_tape", "default_name": "Bar tape" }
+		]
+	},
+	"mtb_bike": {
+		"label": "Mountain bike",
+		"components": [
+			{ "type": "chainring", "default_name": "Chainring" },
+			{ "type": "tire_mtb", "default_name": "Front tire" },
+			{ "type": "tire_mtb", "default_name": "Rear tire" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Front brake pads" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Rear brake pads" },
+			{ "type": "brake_rotor", "default_name": "Front brake rotor" },
+			{ "type": "brake_rotor", "default_name": "Rear brake rotor" },
+			{ "type": "mineral_oil_shimano", "default_name": "Brake fluid" },
+			{ "type": "grips_mtb", "default_name": "Grips" },
+			{ "type": "fork_suspension_lower_service", "default_name": "Fork lower service" },
+			{ "type": "rear_shock_air_can_service", "default_name": "Rear shock air can service" },
+			{ "type": "dropper_post_service", "default_name": "Dropper post service" }
+		]
+	},
+	"commuter_bike": {
+		"label": "Commuter bike",
+		"components": [
+			{ "type": "chainring", "default_name": "Chainring" },
+			{ "type": "tire_road", "default_name": "Front tire" },
+			{ "type": "tire_road", "default_name": "Rear tire" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Front brake pads" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Rear brake pads" },
+			{ "type": "shift_cable", "default_name": "Shift cable" },
+			{ "type": "brake_cable_mechanical", "default_name": "Brake cable" },
+			{ "type": "bar_tape", "default_name": "Bar tape" }
+		]
+	},
+	"ebike": {
+		"label": "Ebike",
+		"components": [
+			{ "type": "chainring", "default_name": "Chainring" },
+			{ "type": "tire_road", "default_name": "Front tire" },
+			{ "type": "tire_road", "default_name": "Rear tire" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Front brake pads" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Rear brake pads" },
+			{ "type": "brake_rotor", "default_name": "Front brake rotor" },
+			{ "type": "brake_rotor", "default_name": "Rear brake rotor" },
+			{ "type": "mineral_oil_shimano", "default_name": "Brake fluid" },
+			{ "type": "tubeless_sealant_standard", "default_name": "Tubeless sealant" },
+			{ "type": "ebike_motor_service", "default_name": "Motor service" },
+			{ "type": "ebike_battery_health_check", "default_name": "Battery health check" },
+			{ "type": "bar_tape", "default_name": "Bar tape" }
+		]
+	},
+	"touring_bike": {
+		"label": "Touring bike",
+		"components": [
+			{ "type": "chainring", "default_name": "Chainring" },
+			{ "type": "tire_gravel", "default_name": "Front tire" },
+			{ "type": "tire_gravel", "default_name": "Rear tire" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Front brake pads" },
+			{ "type": "disc_pads_hydraulic", "default_name": "Rear brake pads" },
+			{ "type": "brake_rotor", "default_name": "Front brake rotor" },
+			{ "type": "brake_rotor", "default_name": "Rear brake rotor" },
+			{ "type": "mineral_oil_shimano", "default_name": "Brake fluid" },
+			{ "type": "shift_cable", "default_name": "Shift cable" },
+			{ "type": "brake_cable_mechanical", "default_name": "Brake cable" },
+			{ "type": "bar_tape", "default_name": "Bar tape" }
+		]
+	}
+}

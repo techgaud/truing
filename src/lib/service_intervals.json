@@ -525,5 +525,25 @@
 		"inspection_time_days": 90,
 		"wear_multipliers_v2": { "mud": 1.5 },
 		"notes": "Annual seal and oil service. Full rebuild every 2 years."
+	},
+	"ebike_motor_service": {
+		"label": "Ebike motor service",
+		"category": "ebike",
+		"distance_meters": null,
+		"time_days": 365,
+		"inspection_distance_meters": null,
+		"inspection_time_days": 180,
+		"wear_multipliers_v2": {},
+		"notes": "Annual service per motor manufacturer (Bosch, Shimano STEPS, Yamaha, Brose). Check your motor manual — some require dealer-only service."
+	},
+	"ebike_battery_health_check": {
+		"label": "Ebike battery health check",
+		"category": "ebike",
+		"distance_meters": null,
+		"time_days": 365,
+		"inspection_distance_meters": null,
+		"inspection_time_days": 180,
+		"wear_multipliers_v2": {},
+		"notes": "Annual capacity test via the motor system's app or display. Consider replacement when capacity drops below ~70% of original."
 	}
 }
