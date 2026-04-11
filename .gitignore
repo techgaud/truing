@@ -41,6 +41,9 @@ NOTES.md
 SCRATCH.md
 TODO.local.md
 
+# Logs
+*.log
+
 # Native (Capacitor)
 android/app/build
 ios/App/build
