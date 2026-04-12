@@ -4,6 +4,9 @@
 	import { db, type Bike, type Ride } from '$lib/db';
 
 	const METERS_PER_MILE = 1609.344;
+	const SWIPE_THRESHOLD = 80;
+	const SWIPE_MAX = 120;
+	const UNDO_WINDOW_MS = 5000;
 
 	type Row = { ride: Ride; bike: Bike | undefined };
 
@@ -17,14 +20,97 @@
 		return rides.map((ride) => ({ ride, bike: bikeById[ride.bike_id] }));
 	});
 
+	let revealedRideId = $state<number | null>(null);
+	let draggingRideId = $state<number | null>(null);
+	let dragStartX = $state(0);
+	let dragDeltaX = $state(0);
+	let pendingDelete = $state<Ride | null>(null);
+	let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
 	function formatDistance(meters: number): string {
-		const miles = meters / METERS_PER_MILE;
-		return `${miles.toFixed(1)} mi`;
+		return `${(meters / METERS_PER_MILE).toFixed(1)} mi`;
 	}
 
 	function formatDate(iso: string): string {
 		const d = new Date(iso);
 		return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+	}
+
+	function transformFor(rideId: number): number {
+		if (draggingRideId === rideId) return Math.max(-SWIPE_MAX, Math.min(0, dragDeltaX));
+		if (revealedRideId === rideId) return -SWIPE_THRESHOLD;
+		return 0;
+	}
+
+	function handlePointerDown(e: PointerEvent, rideId: number) {
+		if (e.pointerType === 'mouse' && e.button !== 0) return;
+		draggingRideId = rideId;
+		dragStartX = e.clientX;
+		dragDeltaX = revealedRideId === rideId ? -SWIPE_THRESHOLD : 0;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function handlePointerMove(e: PointerEvent, rideId: number) {
+		if (draggingRideId !== rideId) return;
+		const offset = revealedRideId === rideId ? -SWIPE_THRESHOLD : 0;
+		dragDeltaX = e.clientX - dragStartX + offset;
+	}
+
+	function handlePointerUp(e: PointerEvent, rideId: number) {
+		if (draggingRideId !== rideId) return;
+		try {
+			(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+		} catch {
+			// ignore if capture was never taken
+		}
+		revealedRideId = dragDeltaX < -SWIPE_THRESHOLD / 2 ? rideId : null;
+		draggingRideId = null;
+		dragDeltaX = 0;
+	}
+
+	function handleRowKeydown(e: KeyboardEvent, row: Row) {
+		if (e.key === 'Delete' || e.key === 'Backspace') {
+			e.preventDefault();
+			handleDelete(row);
+		} else if (e.key === 'Escape') {
+			revealedRideId = null;
+		}
+	}
+
+	async function handleDelete(row: Row) {
+		if (row.ride.id === undefined) return;
+		if (pendingTimer) {
+			clearTimeout(pendingTimer);
+			pendingTimer = null;
+			pendingDelete = null;
+		}
+		const rideCopy: Ride = { ...row.ride };
+		try {
+			await db.rides.delete(row.ride.id);
+			pendingDelete = rideCopy;
+			revealedRideId = null;
+			pendingTimer = setTimeout(() => {
+				pendingDelete = null;
+				pendingTimer = null;
+			}, UNDO_WINDOW_MS);
+		} catch (err) {
+			alert(`Delete failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
+	async function handleUndo() {
+		if (!pendingDelete) return;
+		const toRestore = pendingDelete;
+		if (pendingTimer) {
+			clearTimeout(pendingTimer);
+			pendingTimer = null;
+		}
+		pendingDelete = null;
+		try {
+			await db.rides.put(toRestore);
+		} catch (err) {
+			alert(`Undo failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
 	}
 </script>
 
@@ -58,22 +144,62 @@
 	{:else if $rows}
 		<ul class="mt-6 space-y-2">
 			{#each $rows as row (row.ride.id)}
-				<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
-					<div class="flex items-start justify-between gap-3">
-						<div class="min-w-0">
-							<p class="font-medium">{formatDistance(row.ride.distance_meters)}</p>
-							<p class="text-sm text-fg-muted">
-								{row.bike?.name ?? 'Unknown bike'} · {formatDate(row.ride.started_at)}
-							</p>
-						</div>
-						<span
-							class="shrink-0 rounded-button border border-border px-2 py-0.5 text-xs text-fg-muted capitalize"
+				{@const rideId = row.ride.id}
+				{#if rideId !== undefined}
+					<li class="relative overflow-hidden rounded-card">
+						<button
+							type="button"
+							onclick={() => handleDelete(row)}
+							aria-label="Delete ride"
+							class="absolute top-0 right-0 bottom-0 flex items-center bg-danger px-5 font-medium text-accent-fg"
 						>
-							{row.ride.source}
-						</span>
-					</div>
-				</li>
+							Delete
+						</button>
+						<div
+							role="button"
+							tabindex="0"
+							aria-label="Ride row. Press Delete or Backspace to remove."
+							onpointerdown={(e) => handlePointerDown(e, rideId)}
+							onpointermove={(e) => handlePointerMove(e, rideId)}
+							onpointerup={(e) => handlePointerUp(e, rideId)}
+							onpointercancel={(e) => handlePointerUp(e, rideId)}
+							onkeydown={(e) => handleRowKeydown(e, row)}
+							class="relative touch-pan-y rounded-card border border-border bg-surface-elevated px-4 py-3 select-none {draggingRideId ===
+							rideId
+								? ''
+								: 'transition-transform duration-150 ease-out'}"
+							style="transform: translateX({transformFor(rideId)}px);"
+						>
+							<div class="flex items-start justify-between gap-3">
+								<div class="min-w-0">
+									<p class="font-medium">{formatDistance(row.ride.distance_meters)}</p>
+									<p class="text-sm text-fg-muted">
+										{row.bike?.name ?? 'Unknown bike'} · {formatDate(row.ride.started_at)}
+									</p>
+								</div>
+								<span
+									class="shrink-0 rounded-button border border-border px-2 py-0.5 text-xs text-fg-muted capitalize"
+								>
+									{row.ride.source}
+								</span>
+							</div>
+						</div>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 	{/if}
 </main>
+
+{#if pendingDelete}
+	<div
+		role="status"
+		aria-live="polite"
+		class="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-card border border-border bg-surface-elevated px-4 py-2 shadow-lg"
+	>
+		<span>Ride deleted.</span>
+		<button type="button" onclick={handleUndo} class="text-sm font-medium text-accent">
+			Undo
+		</button>
+	</div>
+{/if}
