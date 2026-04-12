@@ -597,7 +597,9 @@
 </main>
 
 {#if showAddOne}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+	<div
+		class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12"
+	>
 		<div
 			role="dialog"
 			aria-modal="true"
