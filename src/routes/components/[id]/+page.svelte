@@ -8,7 +8,8 @@
 		replacementDistanceMeters,
 		replacementTimeDays,
 		componentLabel,
-		componentTypeLabel
+		componentTypeLabel,
+		serviceSchedule
 	} from '$lib/intervals';
 	import {
 		formatDistance,
@@ -91,11 +92,18 @@
 
 	let showServiceModal = $state(false);
 	let serviceAction = $state<ServiceAction>('serviced');
+	let serviceTypeKey = $state('');
 	let serviceDate = $state(todayISO());
 	let serviceOdometerMiles = $state<number | ''>('');
 	let serviceNotes = $state('');
 	let serviceSaving = $state(false);
 	let serviceError = $state('');
+
+	const componentSchedule = $derived.by(() => {
+		const snap = $snapshot;
+		if (!snap || 'notFound' in snap) return [];
+		return serviceSchedule(snap.component.type);
+	});
 
 	function todayISO(): string {
 		const d = new Date();
@@ -104,6 +112,7 @@
 
 	function openServiceModal() {
 		serviceAction = 'serviced';
+		serviceTypeKey = '';
 		serviceDate = todayISO();
 		serviceOdometerMiles = '';
 		serviceNotes = '';
@@ -129,6 +138,7 @@
 				performed_at: new Date(serviceDate).toISOString(),
 				performed_at_tz: tz,
 				action: serviceAction,
+				service_type: serviceTypeKey || undefined,
 				odometer_meters_at_service:
 					serviceOdometerMiles === ''
 						? undefined
@@ -248,7 +258,15 @@
 						<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
 							<div class="flex items-start justify-between gap-3">
 								<div class="min-w-0">
-									<p class="font-medium capitalize">{entry.action}</p>
+									<p class="font-medium capitalize">
+										{entry.action}
+										{#if entry.service_type}
+											<span class="ml-1 font-normal text-fg-muted"
+												>{componentSchedule.find((s) => s.key === entry.service_type)?.name ??
+													entry.service_type}</span
+											>
+										{/if}
+									</p>
 									{#if entry.notes}
 										<p class="text-sm text-fg-muted">{entry.notes}</p>
 									{/if}
@@ -316,6 +334,21 @@
 						<option value="noted">Noted</option>
 					</select>
 				</div>
+				{#if componentSchedule.length > 0 && serviceAction === 'serviced'}
+					<div>
+						<label for="service-type" class="block text-sm font-medium">Service type</label>
+						<select
+							id="service-type"
+							bind:value={serviceTypeKey}
+							class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+						>
+							<option value="">General</option>
+							{#each componentSchedule as entry (entry.key)}
+								<option value={entry.key}>{entry.name}</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
 				<div>
 					<label for="service-date" class="block text-sm font-medium">Date</label>
 					<input

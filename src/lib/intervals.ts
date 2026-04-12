@@ -2,6 +2,13 @@ import type { Component, CustomComponentType } from '$lib/db';
 import { db } from '$lib/db';
 import serviceIntervals from '$lib/service_intervals.json';
 
+export type ServiceScheduleEntry = {
+	key: string;
+	name: string;
+	time_days: number | null;
+	distance_meters: number | null;
+};
+
 export type ServiceInterval = {
 	label: string;
 	category: string;
@@ -11,6 +18,7 @@ export type ServiceInterval = {
 	inspection_time_days: number | null;
 	wear_multipliers_v2: Record<string, number>;
 	notes: string;
+	service_schedule?: ServiceScheduleEntry[];
 };
 
 const shipped = serviceIntervals as Record<string, ServiceInterval>;
@@ -70,6 +78,10 @@ export function inspectionTimeDays(component: Component): number | null {
 export function componentLabel(component: Component): string {
 	if (component.name) return component.name;
 	return componentTypeLabel(component.type);
+}
+
+export function serviceSchedule(type: string): ServiceScheduleEntry[] {
+	return shipped[type]?.service_schedule ?? [];
 }
 
 export function componentTypeLabel(type: string): string {

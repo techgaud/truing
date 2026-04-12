@@ -78,6 +78,7 @@ export interface ServiceLogEntry {
 	performed_at: string;
 	performed_at_tz: string;
 	action: ServiceAction;
+	service_type?: string;
 	odometer_meters_at_service?: number;
 	notes?: string;
 	created_at: string;

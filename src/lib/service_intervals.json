@@ -476,55 +476,62 @@
 		"wear_multipliers_v2": {},
 		"notes": "Inspect after every crash. Replace if bent — a bent hanger will destroy a rear derailleur."
 	},
-	"fork_suspension_lower_service": {
-		"label": "Suspension fork lower leg service",
+	"fork_suspension": {
+		"label": "Suspension fork",
 		"category": "suspension",
 		"distance_meters": null,
-		"time_days": 180,
+		"time_days": null,
 		"inspection_distance_meters": null,
 		"inspection_time_days": 30,
 		"wear_multipliers_v2": { "mud": 1.8, "dust": 1.5 },
-		"notes": "Oil and seal wiper service every 50 hours or 6 months (whichever first). Dirty conditions dramatically shorten interval."
+		"notes": "Lifetime component. Lower leg service every 6 months, full rebuild annually.",
+		"service_schedule": [
+			{
+				"key": "lower_service",
+				"name": "Lower leg service",
+				"time_days": 180,
+				"distance_meters": null
+			},
+			{ "key": "full_rebuild", "name": "Full rebuild", "time_days": 365, "distance_meters": null }
+		]
 	},
-	"fork_suspension_full_rebuild": {
-		"label": "Suspension fork full rebuild",
+	"rear_shock": {
+		"label": "Rear shock",
 		"category": "suspension",
 		"distance_meters": null,
-		"time_days": 365,
-		"inspection_distance_meters": null,
-		"inspection_time_days": null,
-		"wear_multipliers_v2": { "mud": 1.5, "dust": 1.3 },
-		"notes": "Damper oil and full seal kit every 200 hours or annually."
-	},
-	"rear_shock_air_can_service": {
-		"label": "Rear shock air can service",
-		"category": "suspension",
-		"distance_meters": null,
-		"time_days": 180,
+		"time_days": null,
 		"inspection_distance_meters": null,
 		"inspection_time_days": 30,
 		"wear_multipliers_v2": { "mud": 1.8, "dust": 1.5 },
-		"notes": "Every 50 hours or 6 months. Air can clean, regrease seals."
+		"notes": "Lifetime component. Air can service every 6 months, full rebuild annually.",
+		"service_schedule": [
+			{
+				"key": "air_can_service",
+				"name": "Air can service",
+				"time_days": 180,
+				"distance_meters": null
+			},
+			{ "key": "full_rebuild", "name": "Full rebuild", "time_days": 365, "distance_meters": null }
+		]
 	},
-	"rear_shock_full_rebuild": {
-		"label": "Rear shock full rebuild",
+	"dropper_post": {
+		"label": "Dropper post",
 		"category": "suspension",
 		"distance_meters": null,
-		"time_days": 365,
-		"inspection_distance_meters": null,
-		"inspection_time_days": null,
-		"wear_multipliers_v2": {},
-		"notes": "Every 200 hours or annually. Damper oil and seal kit."
-	},
-	"dropper_post_service": {
-		"label": "Dropper post service",
-		"category": "suspension",
-		"distance_meters": null,
-		"time_days": 365,
+		"time_days": null,
 		"inspection_distance_meters": null,
 		"inspection_time_days": 90,
 		"wear_multipliers_v2": { "mud": 1.5 },
-		"notes": "Annual seal and oil service. Full rebuild every 2 years."
+		"notes": "Lifetime component. Annual seal and oil service, full rebuild every 2 years.",
+		"service_schedule": [
+			{
+				"key": "seal_service",
+				"name": "Seal and oil service",
+				"time_days": 365,
+				"distance_meters": null
+			},
+			{ "key": "full_rebuild", "name": "Full rebuild", "time_days": 730, "distance_meters": null }
+		]
 	},
 	"ebike_motor_service": {
 		"label": "Ebike motor service",

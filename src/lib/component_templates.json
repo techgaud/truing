@@ -40,9 +40,9 @@
 			{ "type": "brake_rotor", "default_name": "Rear brake rotor" },
 			{ "type": "mineral_oil_shimano", "default_name": "Brake fluid" },
 			{ "type": "grips_mtb", "default_name": "Grips" },
-			{ "type": "fork_suspension_lower_service", "default_name": "Fork lower service" },
-			{ "type": "rear_shock_air_can_service", "default_name": "Rear shock air can service" },
-			{ "type": "dropper_post_service", "default_name": "Dropper post service" }
+			{ "type": "fork_suspension", "default_name": "Suspension fork" },
+			{ "type": "rear_shock", "default_name": "Rear shock" },
+			{ "type": "dropper_post", "default_name": "Dropper post" }
 		]
 	},
 	"commuter_bike": {
