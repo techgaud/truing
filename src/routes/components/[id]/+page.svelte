@@ -5,6 +5,8 @@
 	import { db, type Bike, type Component, type Installation, type ServiceAction } from '$lib/db';
 	import { componentWear } from '$lib/wear';
 	import { clearNotifiedThresholds } from '$lib/notifications';
+	import { isCapacitorNative } from '$lib/platform';
+	import { toast } from '$lib/toast';
 	import {
 		replacementDistanceMeters,
 		replacementTimeDays,
@@ -99,6 +101,44 @@
 	let serviceNotes = $state('');
 	let serviceSaving = $state(false);
 	let serviceError = $state('');
+
+	const isNative = isCapacitorNative();
+	let globalThreshold = $state(90);
+	let customThreshold = $state<number | ''>('');
+
+	if (typeof window !== 'undefined') {
+		db.settings.get('notification_threshold_pct').then((s) => {
+			if (typeof s?.value === 'number') globalThreshold = s.value;
+		});
+	}
+
+	$effect(() => {
+		const snap = $snapshot;
+		if (snap && 'component' in snap) {
+			customThreshold = snap.component.notification_threshold_pct ?? '';
+		}
+	});
+
+	async function saveCustomThreshold() {
+		if (customThreshold === '' || customThreshold === null) return;
+		const val = Math.min(99, Math.max(50, Number(customThreshold)));
+		customThreshold = val;
+		await db.components.update(componentId, {
+			notification_threshold_pct: val,
+			updated_at: new Date().toISOString()
+		});
+		toast.success(`Threshold set to ${val}%.`);
+	}
+
+	async function resetThreshold() {
+		customThreshold = '';
+		await db.components.update(componentId, {
+			notification_threshold_pct: null,
+			notified_thresholds: [],
+			updated_at: new Date().toISOString()
+		});
+		toast.success('Reset to global default.');
+	}
 
 	const componentSchedule = $derived.by(() => {
 		const snap = $snapshot;
@@ -310,6 +350,42 @@
 			<section class="mt-8">
 				<h2 class="text-lg font-semibold">Notes</h2>
 				<p class="mt-2 text-sm whitespace-pre-wrap text-fg-muted">{snap.component.notes}</p>
+			</section>
+		{/if}
+
+		{#if isNative}
+			<section class="mt-8">
+				<h2 class="text-lg font-semibold">Notifications</h2>
+				<div class="mt-3">
+					<label for="comp-threshold" class="block text-sm font-medium">
+						Early warning threshold
+					</label>
+					<div class="mt-1 flex items-center gap-3">
+						<input
+							id="comp-threshold"
+							type="number"
+							min="50"
+							max="99"
+							placeholder={String(globalThreshold)}
+							bind:value={customThreshold}
+							onchange={saveCustomThreshold}
+							class="w-20 rounded-button border border-border bg-surface-elevated px-3 py-2 text-sm"
+						/>
+						<span class="text-sm text-fg-muted">%</span>
+						{#if customThreshold !== ''}
+							<button type="button" onclick={resetThreshold} class="text-sm text-accent">
+								Reset to default
+							</button>
+						{/if}
+					</div>
+					<p class="mt-1 text-xs text-fg-muted">
+						{#if customThreshold === ''}
+							Using global default ({globalThreshold}%). Set a value to override for this component.
+						{:else}
+							Custom threshold. Alerts at {customThreshold}%, 95%, and 99%.
+						{/if}
+					</p>
+				</div>
 			</section>
 		{/if}
 	{/if}
