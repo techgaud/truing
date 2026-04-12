@@ -25,6 +25,20 @@ export default defineConfig({
 						sizes: 'any',
 						type: 'image/svg+xml'
 					}
+				],
+				shortcuts: [
+					{
+						name: 'Add a ride',
+						short_name: 'Ride',
+						url: '/rides/new',
+						icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }]
+					},
+					{
+						name: 'Add a bike',
+						short_name: 'Bike',
+						url: '/bikes/new',
+						icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }]
+					}
 				]
 			},
 			workbox: {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { haptic } from '$lib/haptics';
 	import LayoutDashboard from 'lucide-svelte/icons/layout-dashboard';
 	import Bike from 'lucide-svelte/icons/bike';
 	import Route from 'lucide-svelte/icons/route';
@@ -18,6 +19,7 @@
 >
 	<a
 		href={resolve('/')}
+		onclick={() => haptic.selection()}
 		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isActive(
 			'/'
 		)
@@ -29,6 +31,7 @@
 	</a>
 	<a
 		href={resolve('/bikes')}
+		onclick={() => haptic.selection()}
 		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isActive(
 			'/bikes'
 		)
@@ -40,6 +43,7 @@
 	</a>
 	<a
 		href={resolve('/rides')}
+		onclick={() => haptic.selection()}
 		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isActive(
 			'/rides'
 		)

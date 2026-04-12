@@ -12,10 +12,12 @@
 	import { installGlobalHandlers } from '$lib/errors';
 	import { checkStorage, requestPersist } from '$lib/storage';
 	import { handleShortcutKeyDown, loadShortcutMode } from '$lib/shortcuts';
+	import { loadUnitPreference } from '$lib/units';
 
 	if (browser) {
 		installGlobalHandlers();
 		loadShortcutMode();
+		loadUnitPreference();
 	}
 
 	let evicted = $state(false);

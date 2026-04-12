@@ -6,6 +6,14 @@
 	import { getStorageEstimate, type StorageEstimate } from '$lib/storage';
 	import { fetchStravaGear, type StravaGear } from '$lib/strava';
 	import { setShortcutMode, getShortcutMode, type ShortcutMode } from '$lib/shortcuts';
+	import {
+		setUnitPreference,
+		getUnitPreference,
+		loadUnitPreference,
+		type UnitSystem
+	} from '$lib/units';
+
+	loadUnitPreference();
 
 	let storageInfo = $state<StorageEstimate | null>(null);
 	getStorageEstimate().then((est) => (storageInfo = est));
@@ -214,6 +222,25 @@
 	<section class="mt-8">
 		<h2 class="text-lg font-semibold">General</h2>
 		<div class="mt-3">
+			<label for="unit-system" class="block text-sm font-medium">Distance units</label>
+			<select
+				id="unit-system"
+				value={getUnitPreference()}
+				onchange={(e) => setUnitPreference((e.target as HTMLSelectElement).value as UnitSystem)}
+				class="mt-1 w-full rounded-button border border-border bg-surface-elevated px-3 py-2 sm:w-64"
+			>
+				<option value="imperial">Miles</option>
+				<option value="metric">Kilometers</option>
+			</select>
+		</div>
+		<div class="mt-4">
+			<p class="text-sm font-medium">Timezone</p>
+			<p class="mt-1 text-sm text-fg-muted">{Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+			<p class="mt-1 text-xs text-fg-muted">
+				Truing uses your device timezone for all dates. This is detected automatically.
+			</p>
+		</div>
+		<div class="mt-4">
 			<label for="shortcut-mode" class="block text-sm font-medium">Keyboard shortcuts</label>
 			<select
 				id="shortcut-mode"

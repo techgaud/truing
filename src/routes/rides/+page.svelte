@@ -4,6 +4,7 @@
 	import { db, type Bike, type Ride } from '$lib/db';
 	import { parseFile } from '$lib/import/parse';
 	import { syncStrava } from '$lib/strava';
+	import { haptic } from '$lib/haptics';
 
 	const METERS_PER_MILE = 1609.344;
 	const SWIPE_THRESHOLD = 80;
@@ -65,7 +66,9 @@
 		} catch {
 			// ignore if capture was never taken
 		}
-		revealedRideId = dragDeltaX < -SWIPE_THRESHOLD / 2 ? rideId : null;
+		const revealed = dragDeltaX < -SWIPE_THRESHOLD / 2;
+		if (revealed) haptic.impact('medium');
+		revealedRideId = revealed ? rideId : null;
 		draggingRideId = null;
 		dragDeltaX = 0;
 	}
@@ -81,6 +84,7 @@
 
 	async function handleDelete(row: Row) {
 		if (row.ride.id === undefined) return;
+		haptic.notification('warning');
 		if (pendingTimer) {
 			clearTimeout(pendingTimer);
 			pendingTimer = null;
