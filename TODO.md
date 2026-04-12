@@ -2,7 +2,7 @@
 
 Things that are deferred until a prerequisite lands or a follow up commit picks them up.
 
-- Global toast/notification system. Singleton store + root layout component. Replace all scattered status strings with toast.success/error/warning calls. Flags for type, duration, optional action button.
+- Migrate scattered status strings (exportStatus, importStatus, stravaStatus, packStatus, etc.) to the global toast system. The toast store and ToastContainer are built and mounted. Just need to replace inline status displays with toast.success/error calls in each page.
 - Playwright E2E tests and axe-core a11y. Needs Playwright browser deps installed (CI handles this).
 - Quick-add-ride shortcut. Stripped down 3-tap form (bike, distance, done) with a FAB on the rides screen and a PWA home screen shortcut.
 - Paid data packs. Authenticated delivery via Cloudflare Workers route that verifies purchase status before serving .truing files. Payment integration (Stripe or Lemon Squeezy). Pack marketplace UI.
