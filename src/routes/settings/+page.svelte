@@ -3,6 +3,7 @@
 	import { exportAll, importAll } from '$lib/backup';
 	import { db } from '$lib/db';
 	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
+	import { fetchStravaGear, type StravaGear } from '$lib/strava';
 
 	let importing = $state(false);
 	let exportStatus = $state('');
@@ -56,6 +57,47 @@
 	let stravaStatus = $state('');
 	let passphrase = $state('');
 	let keyUnlocked = $state(hasSessionKey());
+
+	let stravaGear = $state<StravaGear[]>([]);
+	let gearLoading = $state(false);
+	let gearMapping = $state<Record<string, number | ''>>({});
+
+	const allBikes = liveQuery(() => db.bikes.filter((b) => !b.archived_at).toArray());
+
+	async function loadStravaGear() {
+		gearLoading = true;
+		try {
+			stravaGear = await fetchStravaGear();
+			const bikes = (await db.bikes.toArray()).filter((b) => !b.archived_at);
+			gearMapping = {};
+			for (const gear of stravaGear) {
+				const linked = bikes.find((b) => b.strava_gear_id === gear.id);
+				gearMapping[gear.id] = linked?.id ?? '';
+			}
+		} catch (err) {
+			stravaStatus = `Failed to load gear. ${err instanceof Error ? err.message : String(err)}`;
+		} finally {
+			gearLoading = false;
+		}
+	}
+
+	async function saveGearMapping() {
+		const bikes = await db.bikes.toArray();
+		const now = new Date().toISOString();
+		for (const bike of bikes) {
+			if (bike.id === undefined) continue;
+			const linkedGearId = Object.entries(gearMapping).find(
+				([, bikeId]) => bikeId === bike.id
+			)?.[0];
+			if (bike.strava_gear_id !== (linkedGearId ?? null)) {
+				await db.bikes.update(bike.id, {
+					strava_gear_id: linkedGearId ?? null,
+					updated_at: now
+				});
+			}
+		}
+		stravaStatus = 'Gear mapping saved.';
+	}
 
 	const stravaConnected = $derived(
 		$stravaAuth?.access_token != null && $stravaAuth.access_token.length > 0
@@ -153,10 +195,52 @@
 					Connected as <span class="font-medium">{$stravaAuth?.athlete_username || 'unknown'}</span
 					>.
 				</p>
-				<button type="button" onclick={handleStravaDisconnect} class="mt-3 text-sm text-danger">
-					Disconnect
-				</button>
+				<div class="mt-3 flex flex-wrap gap-3">
+					<button
+						type="button"
+						onclick={loadStravaGear}
+						disabled={gearLoading}
+						class="rounded-button border border-border px-4 py-1.5 text-sm font-medium disabled:opacity-50"
+					>
+						{gearLoading ? 'Loading…' : 'Link bikes to Strava gear'}
+					</button>
+					<button type="button" onclick={handleStravaDisconnect} class="text-sm text-danger">
+						Disconnect
+					</button>
+				</div>
 			</div>
+
+			{#if stravaGear.length > 0 && $allBikes}
+				<div class="mt-4 space-y-3">
+					<p class="text-sm text-fg-muted">
+						Match each Strava bike to a Truing bike so rides get assigned correctly.
+					</p>
+					{#each stravaGear as gear (gear.id)}
+						<div class="rounded-card border border-border bg-surface-elevated px-4 py-3">
+							<p class="text-sm font-medium">{gear.name}</p>
+							<p class="text-xs text-fg-muted">
+								{Math.round(gear.distance / 1609.344).toLocaleString()} mi on Strava
+							</p>
+							<select
+								bind:value={gearMapping[gear.id]}
+								class="mt-2 w-full rounded-button border border-border bg-surface px-3 py-1.5 text-sm"
+							>
+								<option value="">Not linked</option>
+								{#each $allBikes as bike (bike.id)}
+									<option value={bike.id}>{bike.name}</option>
+								{/each}
+							</select>
+						</div>
+					{/each}
+					<button
+						type="button"
+						onclick={saveGearMapping}
+						class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg"
+					>
+						Save mapping
+					</button>
+				</div>
+			{/if}
 		{:else}
 			<p class="mt-2 text-sm text-fg-muted">
 				Truing uses a bring-your-own-token model. You create your own Strava API app and paste the

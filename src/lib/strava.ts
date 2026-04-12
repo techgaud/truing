@@ -3,6 +3,27 @@ import { decryptField, encryptField } from './crypto';
 
 const STRAVA_API = 'https://www.strava.com/api/v3';
 
+export type StravaGear = {
+	id: string;
+	name: string;
+	distance: number;
+};
+
+export async function fetchStravaGear(): Promise<StravaGear[]> {
+	const token = await getAccessToken();
+	if (!token) throw new Error('Not connected to Strava.');
+	const res = await fetch(`${STRAVA_API}/athlete`, {
+		headers: { Authorization: `Bearer ${token}` }
+	});
+	if (!res.ok) throw new Error(`Strava API returned ${res.status}.`);
+	const athlete = await res.json();
+	return (athlete.bikes ?? []).map((b: { id: string; name: string; distance: number }) => ({
+		id: b.id,
+		name: b.name,
+		distance: b.distance
+	}));
+}
+
 async function getAccessToken(): Promise<string | null> {
 	const auth = await db.strava_auth.get(1);
 	if (!auth || auth.access_token.length === 0) return null;
