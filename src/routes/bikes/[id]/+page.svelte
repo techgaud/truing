@@ -269,6 +269,24 @@
 		}
 	}
 
+	async function handleUninstall(installationId: number) {
+		if (
+			!confirm(
+				'Uninstall this component? It will move to your parts bin and can be reinstalled later.'
+			)
+		)
+			return;
+		try {
+			const now = new Date().toISOString();
+			await db.installations.update(installationId, {
+				removed_at: now,
+				updated_at: now
+			});
+		} catch (err) {
+			alert(`Uninstall failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
 	async function handleDelete(componentId: number) {
 		if (!confirm('Delete this component? This cannot be undone.')) return;
 		try {
@@ -531,6 +549,13 @@
 											class="text-sm text-accent"
 										>
 											Edit
+										</button>
+										<button
+											type="button"
+											onclick={() => handleUninstall(installation.id!)}
+											class="text-sm text-fg-muted"
+										>
+											Uninstall
 										</button>
 										<button
 											type="button"
