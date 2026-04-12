@@ -1,0 +1,96 @@
+name: Bug Report
+description: Report a bug in Truing
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: Tell us what you saw.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce the issue?
+      placeholder: |
+        1. Go to ...
+        2. Tap on ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: error_code
+    attributes:
+      label: Error code (if shown)
+      description: If the app displayed an error code, select it here.
+      options:
+        - None / not shown
+        - E0000 — Unhandled error
+        - E1001 — Dexie failed to open database
+        - E1002 — Dexie migration failed
+        - E1003 — Canary row missing on startup (eviction detected)
+        - E1004 — Decrypt failed on strava_auth row
+        - E1005 — Strava OAuth code exchange failed
+        - E1006 — Strava refresh token expired
+        - E1007 — Strava API returned 5xx after max retries
+        - E1008 — Strava API 401 after token refresh
+        - E1009 — Import file checksum mismatch
+        - E1010 — Import file schema_version newer than app
+        - E1011 — Component type in DB missing from service_intervals.json
+        - E1012 — Unhandled sync promise rejection
+    validations:
+      required: false
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android app (Capacitor)
+        - Web (Chrome)
+        - Web (Firefox)
+        - Web (Safari)
+        - Web (other)
+        - Installed PWA
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Phone model, tablet, or desktop OS.
+      placeholder: 'Pixel 8, Windows 11, etc.'
+    validations:
+      required: false
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: Check Settings > Storage for the version number.
+      placeholder: '0.0.1'
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag and drop any screenshots that help explain the problem.
+    validations:
+      required: false
