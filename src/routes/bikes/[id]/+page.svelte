@@ -25,6 +25,8 @@
 	const intervals = serviceIntervals as Record<string, ServiceInterval>;
 	const templates = templatesData as Record<string, Template>;
 
+	const METERS_PER_MILE = 1609.344;
+
 	const bikeId = $derived(Number(page.params.id));
 
 	const bike = liveQuery(async () => (await db.bikes.get(bikeId)) ?? null);
@@ -63,6 +65,12 @@
 	let addType = $state('');
 	let addName = $state('');
 	let addInstallDate = $state(todayISO());
+	let addStartingWearMiles = $state<number | ''>('');
+	let addIntervalDistanceMiles = $state<number | ''>('');
+	let addIntervalTimeDays = $state<number | ''>('');
+	let addPurchasePrice = $state<number | ''>('');
+	let addPurchaseCurrency = $state('USD');
+	let addNotes = $state('');
 	let addSaving = $state(false);
 	let addError = $state('');
 
@@ -83,6 +91,12 @@
 		addType = '';
 		addName = '';
 		addInstallDate = todayISO();
+		addStartingWearMiles = '';
+		addIntervalDistanceMiles = '';
+		addIntervalTimeDays = '';
+		addPurchasePrice = '';
+		addPurchaseCurrency = 'USD';
+		addNotes = '';
 		addError = '';
 		showAddOne = true;
 	}
@@ -90,11 +104,21 @@
 	function openEditModal(componentId: number, installationId: number) {
 		const row = $installed?.find((r) => r.installation.id === installationId);
 		if (!row || !row.component) return;
+		const c = row.component;
 		editingComponentId = componentId;
 		editingInstallationId = installationId;
-		addType = row.component.type;
-		addName = row.component.name ?? '';
+		addType = c.type;
+		addName = c.name ?? '';
 		addInstallDate = row.installation.installed_at.slice(0, 10);
+		addStartingWearMiles = c.initial_wear_meters ? c.initial_wear_meters / METERS_PER_MILE : '';
+		addIntervalDistanceMiles =
+			c.replacement_interval_distance_meters_override != null
+				? c.replacement_interval_distance_meters_override / METERS_PER_MILE
+				: '';
+		addIntervalTimeDays = c.replacement_interval_time_days_override ?? '';
+		addPurchasePrice = c.purchase_price_cents != null ? c.purchase_price_cents / 100 : '';
+		addPurchaseCurrency = c.purchase_currency ?? 'USD';
+		addNotes = c.notes ?? '';
 		addError = '';
 		showAddOne = true;
 	}
@@ -147,12 +171,28 @@
 			const now = new Date().toISOString();
 			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const installedAt = new Date(addInstallDate).toISOString();
+			const initialWearMeters =
+				addStartingWearMiles === '' ? 0 : Math.round(addStartingWearMiles * METERS_PER_MILE);
+			const intervalDistanceOverride =
+				addIntervalDistanceMiles === ''
+					? null
+					: Math.round(addIntervalDistanceMiles * METERS_PER_MILE);
+			const intervalTimeOverride = addIntervalTimeDays === '' ? null : addIntervalTimeDays;
+			const priceCents = addPurchasePrice === '' ? null : Math.round(addPurchasePrice * 100);
+			const currency = addPurchasePrice === '' ? null : addPurchaseCurrency;
+			const notes = addNotes.trim() || undefined;
 			if (editingComponentId !== null && editingInstallationId !== null) {
 				const compId = editingComponentId;
 				const instId = editingInstallationId;
 				await db.transaction('rw', db.components, db.installations, async () => {
 					await db.components.update(compId, {
 						name: addName.trim() || undefined,
+						initial_wear_meters: initialWearMeters,
+						replacement_interval_distance_meters_override: intervalDistanceOverride,
+						replacement_interval_time_days_override: intervalTimeOverride,
+						purchase_price_cents: priceCents,
+						purchase_currency: currency,
+						notes,
 						updated_at: now
 					});
 					await db.installations.update(instId, {
@@ -165,7 +205,12 @@
 					const componentId = (await db.components.add({
 						type: addType,
 						name: addName.trim() || undefined,
-						initial_wear_meters: 0,
+						initial_wear_meters: initialWearMeters,
+						replacement_interval_distance_meters_override: intervalDistanceOverride,
+						replacement_interval_time_days_override: intervalTimeOverride,
+						purchase_price_cents: priceCents,
+						purchase_currency: currency,
+						notes,
 						created_at: now,
 						updated_at: now
 					})) as number;
@@ -382,6 +427,90 @@
 						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
 					/>
 				</div>
+				<details class="rounded-card border border-border bg-surface px-3 py-2">
+					<summary class="cursor-pointer text-sm font-medium">More details</summary>
+					<div class="mt-4 space-y-4">
+						<div>
+							<label for="add-starting-wear" class="block text-sm font-medium">
+								Starting wear (miles)
+							</label>
+							<p class="text-xs text-fg-muted">
+								Prior wear when you added this component to Truing. Leave blank for brand new parts.
+							</p>
+							<input
+								id="add-starting-wear"
+								type="number"
+								min="0"
+								step="1"
+								bind:value={addStartingWearMiles}
+								class="mt-1 w-full rounded-button border border-border bg-surface-elevated px-3 py-2"
+							/>
+						</div>
+						<div>
+							<label for="add-interval-distance" class="block text-sm font-medium">
+								Interval override, distance (miles)
+							</label>
+							<p class="text-xs text-fg-muted">
+								Overrides the shipped default for this component type.
+							</p>
+							<input
+								id="add-interval-distance"
+								type="number"
+								min="0"
+								step="1"
+								bind:value={addIntervalDistanceMiles}
+								class="mt-1 w-full rounded-button border border-border bg-surface-elevated px-3 py-2"
+							/>
+						</div>
+						<div>
+							<label for="add-interval-time" class="block text-sm font-medium">
+								Interval override, time (days)
+							</label>
+							<input
+								id="add-interval-time"
+								type="number"
+								min="0"
+								step="1"
+								bind:value={addIntervalTimeDays}
+								class="mt-1 w-full rounded-button border border-border bg-surface-elevated px-3 py-2"
+							/>
+						</div>
+						<div>
+							<label for="add-price" class="block text-sm font-medium">Purchase price</label>
+							<div class="mt-1 flex gap-2">
+								<input
+									id="add-price"
+									type="number"
+									min="0"
+									step="0.01"
+									bind:value={addPurchasePrice}
+									class="flex-1 rounded-button border border-border bg-surface-elevated px-3 py-2"
+								/>
+								<select
+									bind:value={addPurchaseCurrency}
+									aria-label="Currency"
+									class="rounded-button border border-border bg-surface-elevated px-3 py-2"
+								>
+									<option value="USD">USD</option>
+									<option value="EUR">EUR</option>
+									<option value="GBP">GBP</option>
+									<option value="CAD">CAD</option>
+									<option value="AUD">AUD</option>
+									<option value="JPY">JPY</option>
+								</select>
+							</div>
+						</div>
+						<div>
+							<label for="add-notes" class="block text-sm font-medium">Notes</label>
+							<textarea
+								id="add-notes"
+								rows="3"
+								bind:value={addNotes}
+								class="mt-1 w-full rounded-button border border-border bg-surface-elevated px-3 py-2"
+							></textarea>
+						</div>
+					</div>
+				</details>
 				{#if addError}
 					<p class="text-sm text-danger" aria-live="polite">{addError}</p>
 				{/if}
