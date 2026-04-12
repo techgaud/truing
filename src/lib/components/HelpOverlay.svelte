@@ -33,6 +33,15 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
+<button
+	type="button"
+	onclick={openHelp}
+	aria-label="Help"
+	class="fixed bottom-20 left-5 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface-elevated text-fg-muted shadow-lg lg:bottom-6"
+>
+	?
+</button>
+
 {#if $helpOpen && content}
 	<button
 		type="button"
