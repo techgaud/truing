@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { liveQuery } from 'dexie';
-	import { exportAll, importAll } from '$lib/backup';
+	import { exportAll, importAll, backupFilename, getLastBackupAge } from '$lib/backup';
 	import { db } from '$lib/db';
 	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
 	import { getStorageEstimate, type StorageEstimate } from '$lib/storage';
@@ -13,6 +13,8 @@
 	let importing = $state(false);
 	let exportStatus = $state('');
 	let importStatus = $state('');
+	let lastBackupDays = $state<number | null>(null);
+	getLastBackupAge().then((d) => (lastBackupDays = d));
 
 	async function handleExport() {
 		exportStatus = '';
@@ -22,29 +24,46 @@
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = `truing-backup-${new Date().toISOString().slice(0, 10)}.json`;
+			a.download = backupFilename();
 			a.click();
 			URL.revokeObjectURL(url);
 			exportStatus = 'Backup downloaded.';
+			lastBackupDays = 0;
 		} catch (err) {
 			exportStatus = `Export failed. ${err instanceof Error ? err.message : String(err)}`;
 		}
 	}
 
-	async function handleImport() {
+	async function handleImport(mode: 'replace' | 'merge') {
 		const input = document.createElement('input');
 		input.type = 'file';
 		input.accept = '.json';
 		input.onchange = async () => {
 			const file = input.files?.[0];
 			if (!file) return;
-			if (!confirm('Importing will replace all your current data. Continue?')) return;
+			if (mode === 'replace') {
+				if (!confirm('This will replace all your current data with the backup file. Continue?'))
+					return;
+			}
 			importing = true;
 			importStatus = '';
 			try {
 				const text = await file.text();
-				const counts = await importAll(text);
-				importStatus = `Imported ${counts.bikes} bikes, ${counts.components} components, ${counts.rides} rides, ${counts.serviceLog} service log entries.`;
+				const result = await importAll(text, mode);
+				if (mode === 'replace') {
+					importStatus = `Restored ${result.bikes.added} bikes, ${result.rides.added} rides, ${result.serviceLog.added} service log entries.`;
+				} else {
+					const parts = [];
+					if (result.bikes.added) parts.push(`${result.bikes.added} new bikes`);
+					if (result.bikes.skipped) parts.push(`${result.bikes.skipped} bikes skipped`);
+					if (result.rides.added) parts.push(`${result.rides.added} new rides`);
+					if (result.rides.skipped) parts.push(`${result.rides.skipped} rides skipped`);
+					if (result.serviceLog.added) parts.push(`${result.serviceLog.added} new service entries`);
+					if (result.serviceLog.skipped)
+						parts.push(`${result.serviceLog.skipped} service entries skipped`);
+					importStatus =
+						parts.length > 0 ? `Merged. ${parts.join(', ')}.` : 'Nothing new to import.';
+				}
 			} catch (err) {
 				importStatus = `Import failed. ${err instanceof Error ? err.message : String(err)}`;
 			} finally {
@@ -374,8 +393,15 @@
 	<section class="mt-10">
 		<h2 class="text-lg font-semibold">Data</h2>
 		<p class="mt-2 text-sm text-fg-muted">
-			Export your data as a JSON file for backup. Import to restore from a previous backup.
+			Export your data as a JSON file for backup. Import to restore or merge from a previous backup.
 		</p>
+		{#if lastBackupDays !== null}
+			<p class="mt-1 text-xs text-fg-muted">
+				Last backup {lastBackupDays === 0
+					? 'today'
+					: `${lastBackupDays} day${lastBackupDays === 1 ? '' : 's'} ago`}.
+			</p>
+		{/if}
 		<div class="mt-4 flex flex-wrap gap-3">
 			<button
 				type="button"
@@ -386,11 +412,19 @@
 			</button>
 			<button
 				type="button"
-				onclick={handleImport}
+				onclick={() => handleImport('replace')}
 				disabled={importing}
 				class="rounded-button border border-border px-5 py-2 font-medium disabled:opacity-50"
 			>
-				{importing ? 'Importing…' : 'Import backup'}
+				{importing ? 'Importing…' : 'Restore (replace all)'}
+			</button>
+			<button
+				type="button"
+				onclick={() => handleImport('merge')}
+				disabled={importing}
+				class="rounded-button border border-border px-5 py-2 font-medium disabled:opacity-50"
+			>
+				{importing ? 'Importing…' : 'Merge (keep existing)'}
 			</button>
 		</div>
 		{#if exportStatus}

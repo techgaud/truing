@@ -203,11 +203,11 @@ describe('full export/import round-trip', () => {
 		await db.service_log.clear();
 		expect(await db.bikes.count()).toBe(0);
 
-		const counts = await importAll(json);
-		expect(counts.bikes).toBe(1);
-		expect(counts.components).toBe(1);
-		expect(counts.rides).toBe(1);
-		expect(counts.serviceLog).toBe(1);
+		const result = await importAll(json);
+		expect(result.bikes.added).toBe(1);
+		expect(result.components.added).toBe(1);
+		expect(result.rides.added).toBe(1);
+		expect(result.serviceLog.added).toBe(1);
 
 		const bike = await db.bikes.toCollection().first();
 		expect(bike?.name).toBe('Round Trip Bike');
