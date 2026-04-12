@@ -1,5 +1,15 @@
-import { describe, it, expect } from 'vitest';
-import { getNotificationThresholds, findNewThresholdCrossings } from './notifications';
+import 'fake-indexeddb/auto';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { db } from './db';
+import {
+	getNotificationThresholds,
+	findNewThresholdCrossings,
+	clearNotifiedThresholds
+} from './notifications';
+
+beforeEach(async () => {
+	await db.components.clear();
+});
 
 describe('getNotificationThresholds', () => {
 	it('returns default thresholds when no custom value', () => {
@@ -55,5 +65,35 @@ describe('findNewThresholdCrossings', () => {
 
 	it('handles exact threshold boundary', () => {
 		expect(findNewThresholdCrossings(90, [90, 95, 99], [])).toEqual([90]);
+	});
+});
+
+describe('clearNotifiedThresholds', () => {
+	it('resets notified_thresholds to empty array', async () => {
+		const compId = (await db.components.add({
+			type: 'chain_11sp',
+			initial_wear_meters: 0,
+			notified_thresholds: [90, 95],
+			created_at: '2026-01-01T00:00:00Z',
+			updated_at: '2026-01-01T00:00:00Z'
+		})) as number;
+
+		await clearNotifiedThresholds(compId);
+		const comp = await db.components.get(compId);
+		expect(comp!.notified_thresholds).toEqual([]);
+	});
+
+	it('updates the updated_at timestamp', async () => {
+		const compId = (await db.components.add({
+			type: 'chain_11sp',
+			initial_wear_meters: 0,
+			notified_thresholds: [90],
+			created_at: '2026-01-01T00:00:00Z',
+			updated_at: '2026-01-01T00:00:00Z'
+		})) as number;
+
+		await clearNotifiedThresholds(compId);
+		const comp = await db.components.get(compId);
+		expect(comp!.updated_at).not.toBe('2026-01-01T00:00:00Z');
 	});
 });
