@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { liveQuery } from 'dexie';
 	import { db } from '$lib/db';
@@ -56,6 +57,9 @@
 	let showAddOne = $state(false);
 	let showLoadTemplate = $state(false);
 
+	let editingComponentId = $state<number | null>(null);
+	let editingInstallationId = $state<number | null>(null);
+
 	let addType = $state('');
 	let addName = $state('');
 	let addInstallDate = $state(todayISO());
@@ -73,11 +77,50 @@
 	}
 
 	function openAddOneModal() {
+		editingComponentId = null;
+		editingInstallationId = null;
 		addType = '';
 		addName = '';
 		addInstallDate = todayISO();
 		addError = '';
 		showAddOne = true;
+	}
+
+	function openEditModal(componentId: number, installationId: number) {
+		const row = $installed?.find((r) => r.installation.id === installationId);
+		if (!row || !row.component) return;
+		editingComponentId = componentId;
+		editingInstallationId = installationId;
+		addType = row.component.type;
+		addName = row.component.name ?? '';
+		addInstallDate = row.installation.installed_at.slice(0, 10);
+		addError = '';
+		showAddOne = true;
+	}
+
+	async function handleArchive() {
+		if (!$bike) return;
+		if (!confirm(`Archive ${$bike.name}? It will be hidden from the dashboard. Its history stays.`))
+			return;
+		try {
+			const now = new Date().toISOString();
+			await db.bikes.update(bikeId, { archived_at: now, updated_at: now });
+			goto(resolve('/bikes'));
+		} catch (err) {
+			alert(`Archive failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
+	async function handleDelete(componentId: number) {
+		if (!confirm('Delete this component? This cannot be undone.')) return;
+		try {
+			await db.transaction('rw', db.components, db.installations, async () => {
+				await db.installations.where({ component_id: componentId }).delete();
+				await db.components.delete(componentId);
+			});
+		} catch (err) {
+			alert(`Delete failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
 	}
 
 	function openTemplateModal() {
@@ -97,23 +140,38 @@
 			const now = new Date().toISOString();
 			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const installedAt = new Date(addInstallDate).toISOString();
-			await db.transaction('rw', db.components, db.installations, async () => {
-				const componentId = (await db.components.add({
-					type: addType,
-					name: addName.trim() || undefined,
-					initial_wear_meters: 0,
-					created_at: now,
-					updated_at: now
-				})) as number;
-				await db.installations.add({
-					component_id: componentId,
-					bike_id: bikeId,
-					installed_at: installedAt,
-					installed_at_tz: tz,
-					created_at: now,
-					updated_at: now
+			if (editingComponentId !== null && editingInstallationId !== null) {
+				const compId = editingComponentId;
+				const instId = editingInstallationId;
+				await db.transaction('rw', db.components, db.installations, async () => {
+					await db.components.update(compId, {
+						name: addName.trim() || undefined,
+						updated_at: now
+					});
+					await db.installations.update(instId, {
+						installed_at: installedAt,
+						updated_at: now
+					});
 				});
-			});
+			} else {
+				await db.transaction('rw', db.components, db.installations, async () => {
+					const componentId = (await db.components.add({
+						type: addType,
+						name: addName.trim() || undefined,
+						initial_wear_meters: 0,
+						created_at: now,
+						updated_at: now
+					})) as number;
+					await db.installations.add({
+						component_id: componentId,
+						bike_id: bikeId,
+						installed_at: installedAt,
+						installed_at_tz: tz,
+						created_at: now,
+						updated_at: now
+					});
+				});
+			}
 			showAddOne = false;
 		} catch (err) {
 			addError = err instanceof Error ? err.message : String(err);
@@ -178,6 +236,13 @@
 			{#if $bike.type}
 				<p class="text-fg-muted capitalize">{$bike.type}</p>
 			{/if}
+			{#if $bike.archived_at}
+				<p class="mt-2 text-sm text-fg-muted">Archived.</p>
+			{:else}
+				<button type="button" onclick={handleArchive} class="mt-4 text-sm text-danger">
+					Archive this bike
+				</button>
+			{/if}
 		</header>
 
 		<section class="mt-8">
@@ -209,14 +274,36 @@
 			{:else if $installed}
 				<ul class="mt-4 space-y-2">
 					{#each $installed as row (row.installation.id)}
-						{#if row.component}
+						{#if row.component && row.component.id !== undefined && row.installation.id !== undefined}
+							{@const component = row.component}
+							{@const installation = row.installation}
 							<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
-								<p class="font-medium">
-									{row.component.name ?? intervals[row.component.type]?.label ?? row.component.type}
-								</p>
-								<p class="text-sm text-fg-muted">
-									{intervals[row.component.type]?.label ?? row.component.type}
-								</p>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="font-medium">
+											{component.name ?? intervals[component.type]?.label ?? component.type}
+										</p>
+										<p class="text-sm text-fg-muted">
+											{intervals[component.type]?.label ?? component.type}
+										</p>
+									</div>
+									<div class="flex shrink-0 gap-3">
+										<button
+											type="button"
+											onclick={() => openEditModal(component.id!, installation.id!)}
+											class="text-sm text-accent"
+										>
+											Edit
+										</button>
+										<button
+											type="button"
+											onclick={() => handleDelete(component.id!)}
+											class="text-sm text-danger"
+										>
+											Delete
+										</button>
+									</div>
+								</div>
 							</li>
 						{/if}
 					{/each}
@@ -241,25 +328,31 @@
 			aria-labelledby="add-one-title"
 			class="w-full max-w-md rounded-card bg-surface-elevated p-6"
 		>
-			<h2 id="add-one-title" class="text-lg font-semibold">Add component</h2>
+			<h2 id="add-one-title" class="text-lg font-semibold">
+				{editingComponentId !== null ? 'Edit component' : 'Add component'}
+			</h2>
 			<form onsubmit={handleAddOne} class="mt-4 space-y-4">
 				<div>
 					<label for="add-type" class="block text-sm font-medium">Type</label>
-					<select
-						id="add-type"
-						required
-						bind:value={addType}
-						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
-					>
-						<option value="" disabled>Choose…</option>
-						{#each groupedIntervals as [category, items] (category)}
-							<optgroup label={category}>
-								{#each items as [key, entry] (key)}
-									<option value={key}>{entry.label}</option>
-								{/each}
-							</optgroup>
-						{/each}
-					</select>
+					{#if editingComponentId !== null}
+						<p class="mt-1 text-fg-muted">{intervals[addType]?.label ?? addType}</p>
+					{:else}
+						<select
+							id="add-type"
+							required
+							bind:value={addType}
+							class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+						>
+							<option value="" disabled>Choose…</option>
+							{#each groupedIntervals as [category, items] (category)}
+								<optgroup label={category}>
+									{#each items as [key, entry] (key)}
+										<option value={key}>{entry.label}</option>
+									{/each}
+								</optgroup>
+							{/each}
+						</select>
+					{/if}
 				</div>
 				<div>
 					<label for="add-name" class="block text-sm font-medium">Name</label>
@@ -290,7 +383,7 @@
 						disabled={addSaving}
 						class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
 					>
-						{addSaving ? 'Saving…' : 'Add'}
+						{addSaving ? 'Saving…' : editingComponentId !== null ? 'Save' : 'Add'}
 					</button>
 					<button
 						type="button"
