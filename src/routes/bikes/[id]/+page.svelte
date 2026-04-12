@@ -91,6 +91,63 @@
 		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 	}
 
+	const MAX_PHOTO_DIM = 1024;
+	const JPEG_QUALITY = 0.85;
+
+	async function resizeImage(file: File): Promise<Blob> {
+		return new Promise((resolve, reject) => {
+			const img = new Image();
+			img.onload = () => {
+				let { width, height } = img;
+				if (width > MAX_PHOTO_DIM || height > MAX_PHOTO_DIM) {
+					const scale = MAX_PHOTO_DIM / Math.max(width, height);
+					width = Math.round(width * scale);
+					height = Math.round(height * scale);
+				}
+				const canvas = document.createElement('canvas');
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) return reject(new Error('Canvas not supported'));
+				ctx.drawImage(img, 0, 0, width, height);
+				canvas.toBlob(
+					(blob) => (blob ? resolve(blob) : reject(new Error('Failed to create blob'))),
+					'image/jpeg',
+					JPEG_QUALITY
+				);
+			};
+			img.onerror = () => reject(new Error('Failed to load image'));
+			img.src = URL.createObjectURL(file);
+		});
+	}
+
+	async function handlePhotoUpload() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'image/*';
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			try {
+				const resized = await resizeImage(file);
+				await db.bikes.update(bikeId, {
+					photo_blob: resized,
+					updated_at: new Date().toISOString()
+				});
+			} catch (err) {
+				alert(`Photo upload failed. ${err instanceof Error ? err.message : String(err)}`);
+			}
+		};
+		input.click();
+	}
+
+	async function handlePhotoRemove() {
+		await db.bikes.update(bikeId, {
+			photo_blob: null,
+			updated_at: new Date().toISOString()
+		});
+	}
+
 	function openAddOneModal() {
 		editingComponentId = null;
 		editingInstallationId = null;
@@ -291,7 +348,28 @@
 	{:else if $bike}
 		<header>
 			<a href={resolve('/bikes')} class="text-sm text-fg-muted">← Bikes</a>
-			<h1 class="mt-2 text-2xl font-semibold">{$bike.name}</h1>
+
+			{#if $bike.photo_blob}
+				{@const photoUrl = URL.createObjectURL($bike.photo_blob)}
+				<img
+					src={photoUrl}
+					alt="Photo of {$bike.name}"
+					class="mt-3 h-40 w-full rounded-card object-cover"
+				/>
+				<button type="button" onclick={handlePhotoRemove} class="mt-1 text-xs text-fg-muted">
+					Remove photo
+				</button>
+			{:else}
+				<button
+					type="button"
+					onclick={handlePhotoUpload}
+					class="mt-3 flex h-24 w-full items-center justify-center rounded-card border-2 border-dashed border-border text-sm text-fg-muted"
+				>
+					Add photo
+				</button>
+			{/if}
+
+			<h1 class="mt-3 text-2xl font-semibold">{$bike.name}</h1>
 			{#if $bike.type}
 				<p class="text-fg-muted capitalize">{$bike.type}</p>
 			{/if}

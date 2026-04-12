@@ -7,5 +7,6 @@ Things that are deferred until a prerequisite lands or a follow up commit picks 
 - README.md. First-person, not marketing. Screenshots over bullet points.
 - Playwright E2E tests and axe-core a11y. Needs Playwright browser deps installed (CI handles this).
 - Size-limit budget (.size-limit.json). Bundle budget enforcement at 250 KB gzip.
-- Bike photo upload. Needs the Capacitor camera plugin and client side canvas resize.
+- Capacitor camera plugin integration for a nicer native photo picker. Web file input works now.
 - `projectedReplacementDate` in `wear.ts`. Marked v2. Needs helpers for current installation start date, current wear meters, interval meters, and add days ISO.
+- Size-limit budget (.size-limit.json). v3. Bundle budget enforcement at 250 KB gzip.
