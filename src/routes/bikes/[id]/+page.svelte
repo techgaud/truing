@@ -28,6 +28,7 @@
 		parseDistanceToMeters,
 		distanceLabel
 	} from '$lib/units';
+	import { exportBikeAsPack } from '$lib/packs';
 
 	const intervals = serviceIntervals as Record<string, ServiceInterval>;
 	const templates = templatesData as Record<string, Template>;
@@ -214,6 +215,44 @@
 		addNotes = c.notes ?? '';
 		addError = '';
 		showAddOne = true;
+	}
+
+	async function handleExportPack() {
+		if (!$bike || !$installed) return;
+		const comps = $installed
+			.filter((r) => r.component)
+			.map((r) => {
+				const c = r.component!;
+				const si = intervals[c.type];
+				return {
+					type: c.type,
+					name: c.name ?? si?.label ?? c.type,
+					category: si?.category ?? 'other',
+					distance_meters:
+						c.replacement_interval_distance_meters_override ?? si?.distance_meters ?? null,
+					time_days: c.replacement_interval_time_days_override ?? si?.time_days ?? null,
+					inspection_distance_meters: si?.inspection_distance_meters ?? null,
+					inspection_time_days: si?.inspection_time_days ?? null,
+					notes: si?.notes ?? null
+				};
+			});
+		const json = exportBikeAsPack(
+			$bike.name,
+			{
+				make: $bike.make,
+				model: $bike.model,
+				year: $bike.year,
+				type: $bike.type
+			},
+			comps
+		);
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${$bike.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.truing`;
+		a.click();
+		URL.revokeObjectURL(url);
 	}
 
 	async function handleArchive() {
@@ -417,6 +456,11 @@
 							: ''}.
 					</p>
 				{/if}
+			{/if}
+			{#if $installed && $installed.length > 0}
+				<button type="button" onclick={handleExportPack} class="mt-3 text-sm text-accent">
+					Export as .truing pack
+				</button>
 			{/if}
 			{#if $bike.archived_at}
 				<p class="mt-2 text-sm text-fg-muted">Archived.</p>

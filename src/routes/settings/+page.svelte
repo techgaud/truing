@@ -4,6 +4,13 @@
 	import { db } from '$lib/db';
 	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
 	import { getStorageEstimate, type StorageEstimate } from '$lib/storage';
+	import {
+		validatePack,
+		findNewCustomTypes,
+		applyPack,
+		type Pack,
+		type PackComponent
+	} from '$lib/packs';
 	import { fetchStravaGear, type StravaGear } from '$lib/strava';
 	import { setShortcutMode, getShortcutMode, type ShortcutMode } from '$lib/shortcuts';
 	import {
@@ -15,6 +22,87 @@
 	} from '$lib/units';
 
 	loadUnitPreference();
+
+	let packData = $state<Pack | null>(null);
+	let packChecked = $state<boolean[]>([]);
+	let packNewTypes = $state<PackComponent[]>([]);
+	let packNewTypesChecked = $state<boolean[]>([]);
+	let packBikeId = $state<number | ''>('');
+	let packCreateNew = $state(false);
+	let packStatus = $state('');
+	let packImporting = $state(false);
+
+	async function handlePackFileSelect() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.truing,.json';
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			try {
+				const text = await file.text();
+				const data = JSON.parse(text);
+				const pack = validatePack(data);
+				packData = pack;
+				packChecked = pack.components.map(() => true);
+				const newTypes = findNewCustomTypes(pack);
+				packNewTypes = newTypes;
+				packNewTypesChecked = newTypes.map(() => true);
+				packBikeId = '';
+				packCreateNew = !!pack.bike;
+				packStatus = '';
+			} catch (err) {
+				packStatus = `Failed to load pack. ${err instanceof Error ? err.message : String(err)}`;
+			}
+		};
+		input.click();
+	}
+
+	async function handlePackApply() {
+		if (!packData) return;
+		packImporting = true;
+		packStatus = '';
+		try {
+			let bikeId: number;
+			if (packCreateNew && packData.bike) {
+				const now = new Date().toISOString();
+				bikeId = (await db.bikes.add({
+					name: packData.name,
+					make: packData.bike.make ?? undefined,
+					model: packData.bike.model ?? undefined,
+					year: packData.bike.year ?? undefined,
+					type:
+						(packData.bike.type as
+							| 'road'
+							| 'gravel'
+							| 'mtb'
+							| 'commuter'
+							| 'ebike'
+							| 'touring'
+							| 'other') ?? undefined,
+					starting_odometer_meters: 0,
+					created_at: now,
+					updated_at: now
+				})) as number;
+			} else {
+				if (packBikeId === '') {
+					packStatus = 'Select a bike to apply the pack to.';
+					packImporting = false;
+					return;
+				}
+				bikeId = packBikeId;
+			}
+			const selectedComponents = packData.components.filter((_, i) => packChecked[i]);
+			const selectedNewTypes = packNewTypes.filter((_, i) => packNewTypesChecked[i]);
+			const result = await applyPack(bikeId, selectedComponents, selectedNewTypes);
+			packStatus = `Applied! ${result.added} component${result.added !== 1 ? 's' : ''} added.`;
+			packData = null;
+		} catch (err) {
+			packStatus = `Apply failed. ${err instanceof Error ? err.message : String(err)}`;
+		} finally {
+			packImporting = false;
+		}
+	}
 
 	let storageInfo = $state<StorageEstimate | null>(null);
 	getStorageEstimate().then((est) => (storageInfo = est));
@@ -460,6 +548,107 @@
 		{/if}
 		{#if importStatus}
 			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{importStatus}</p>
+		{/if}
+	</section>
+
+	<section class="mt-10">
+		<h2 class="text-lg font-semibold">Data packs</h2>
+		<p class="mt-2 text-sm text-fg-muted">
+			Import a .truing data pack to add components and service intervals for a specific bike build.
+		</p>
+		{#if !packData}
+			<button
+				type="button"
+				onclick={handlePackFileSelect}
+				class="mt-4 rounded-button border border-border px-5 py-2 font-medium"
+			>
+				Import .truing pack
+			</button>
+		{:else}
+			<div class="mt-4 rounded-card border border-border bg-surface-elevated p-4">
+				<h3 class="font-semibold">{packData.name}</h3>
+				{#if packData.description}
+					<p class="text-sm text-fg-muted">{packData.description}</p>
+				{/if}
+
+				{#if packData.bike}
+					<div class="mt-3 flex gap-3">
+						<label class="flex items-center gap-2 text-sm">
+							<input type="radio" bind:group={packCreateNew} value={true} />
+							Create new bike
+						</label>
+						<label class="flex items-center gap-2 text-sm">
+							<input type="radio" bind:group={packCreateNew} value={false} />
+							Apply to existing
+						</label>
+					</div>
+				{/if}
+
+				{#if !packCreateNew && $allBikes}
+					<select
+						bind:value={packBikeId}
+						class="mt-2 w-full rounded-button border border-border bg-surface px-3 py-2 text-sm"
+					>
+						<option value="">Choose a bike…</option>
+						{#each $allBikes as bike (bike.id)}
+							<option value={bike.id}>{bike.name}</option>
+						{/each}
+					</select>
+				{/if}
+
+				<p class="mt-4 text-sm font-medium">
+					Components ({packChecked.filter(Boolean).length} selected)
+				</p>
+				<ul class="mt-2 max-h-60 space-y-1 overflow-y-auto">
+					{#each packData.components as comp, i (i)}
+						<li>
+							<label class="flex items-center gap-3 text-sm">
+								<input type="checkbox" bind:checked={packChecked[i]} />
+								<span>{comp.name}</span>
+								<span class="text-fg-muted">({comp.category})</span>
+							</label>
+						</li>
+					{/each}
+				</ul>
+
+				{#if packNewTypes.length > 0}
+					<p class="mt-4 text-sm font-medium">
+						New component types ({packNewTypesChecked.filter(Boolean).length} will be created)
+					</p>
+					<ul class="mt-2 space-y-1">
+						{#each packNewTypes as ct, i (i)}
+							<li>
+								<label class="flex items-center gap-3 text-sm">
+									<input type="checkbox" bind:checked={packNewTypesChecked[i]} />
+									<span>{ct.name}</span>
+									<span class="text-fg-muted">({ct.type})</span>
+								</label>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				<div class="mt-4 flex gap-3">
+					<button
+						type="button"
+						onclick={handlePackApply}
+						disabled={packImporting}
+						class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
+					>
+						{packImporting ? 'Applying…' : `Apply ${packChecked.filter(Boolean).length} components`}
+					</button>
+					<button
+						type="button"
+						onclick={() => (packData = null)}
+						class="rounded-button px-5 py-2 font-medium text-fg-muted"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		{/if}
+		{#if packStatus}
+			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{packStatus}</p>
 		{/if}
 	</section>
 
