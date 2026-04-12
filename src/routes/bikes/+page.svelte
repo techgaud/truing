@@ -26,11 +26,16 @@
 	{:else if $bikes}
 		<ul class="mt-6 space-y-2">
 			{#each $bikes as bike (bike.id)}
-				<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
-					<p class="font-medium">{bike.name}</p>
-					{#if bike.type}
-						<p class="text-sm text-fg-muted capitalize">{bike.type}</p>
-					{/if}
+				<li>
+					<a
+						href={resolve('/bikes/[id]', { id: String(bike.id) })}
+						class="block rounded-card border border-border bg-surface-elevated px-4 py-3"
+					>
+						<p class="font-medium">{bike.name}</p>
+						{#if bike.type}
+							<p class="text-sm text-fg-muted capitalize">{bike.type}</p>
+						{/if}
+					</a>
 				</li>
 			{/each}
 		</ul>
