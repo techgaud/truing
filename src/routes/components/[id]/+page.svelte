@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { liveQuery } from 'dexie';
-	import { db, type Bike, type Component, type Installation } from '$lib/db';
+	import { db, type Bike, type Component, type Installation, type ServiceAction } from '$lib/db';
 	import { componentWear } from '$lib/wear';
 	import {
 		replacementDistanceMeters,
@@ -78,6 +78,68 @@
 			urgencyFraction
 		};
 	});
+
+	const serviceLog = liveQuery(async () => {
+		const entries = await db.service_log.where({ component_id: componentId }).toArray();
+		entries.sort((a, b) => b.performed_at.localeCompare(a.performed_at));
+		return entries;
+	});
+
+	let showServiceModal = $state(false);
+	let serviceAction = $state<ServiceAction>('serviced');
+	let serviceDate = $state(todayISO());
+	let serviceOdometerMiles = $state<number | ''>('');
+	let serviceNotes = $state('');
+	let serviceSaving = $state(false);
+	let serviceError = $state('');
+
+	function todayISO(): string {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	}
+
+	function openServiceModal() {
+		serviceAction = 'serviced';
+		serviceDate = todayISO();
+		serviceOdometerMiles = '';
+		serviceNotes = '';
+		serviceError = '';
+		showServiceModal = true;
+	}
+
+	async function handleAddServiceEvent(e: SubmitEvent) {
+		e.preventDefault();
+		if (serviceSaving) return;
+		serviceSaving = true;
+		serviceError = '';
+		try {
+			const snap = $snapshot;
+			if (!snap || 'notFound' in snap) return;
+			const currentInst = snap.installations.find((i) => !i.installation.removed_at);
+			const bikeId = currentInst?.installation.bike_id ?? 0;
+			const now = new Date().toISOString();
+			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			await db.service_log.add({
+				component_id: componentId,
+				bike_id: bikeId,
+				performed_at: new Date(serviceDate).toISOString(),
+				performed_at_tz: tz,
+				action: serviceAction,
+				odometer_meters_at_service:
+					serviceOdometerMiles === ''
+						? undefined
+						: Math.round(serviceOdometerMiles * METERS_PER_MILE),
+				notes: serviceNotes.trim() || undefined,
+				created_at: now,
+				updated_at: now
+			});
+			showServiceModal = false;
+		} catch (err) {
+			serviceError = err instanceof Error ? err.message : String(err);
+		} finally {
+			serviceSaving = false;
+		}
+	}
 
 	function formatDate(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, {
@@ -157,6 +219,37 @@
 			{/if}
 		</section>
 
+		<button
+			type="button"
+			onclick={openServiceModal}
+			class="mt-6 rounded-button bg-accent px-5 py-2 font-medium text-accent-fg"
+		>
+			Log service event
+		</button>
+
+		{#if $serviceLog && $serviceLog.length > 0}
+			<section class="mt-8">
+				<h2 class="text-lg font-semibold">Service log</h2>
+				<ul class="mt-3 space-y-2">
+					{#each $serviceLog as entry (entry.id)}
+						<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
+							<div class="flex items-start justify-between gap-3">
+								<div class="min-w-0">
+									<p class="font-medium capitalize">{entry.action}</p>
+									{#if entry.notes}
+										<p class="text-sm text-fg-muted">{entry.notes}</p>
+									{/if}
+								</div>
+								<p class="shrink-0 text-sm text-fg-muted">
+									{formatDate(entry.performed_at)}
+								</p>
+							</div>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+
 		{#if snap.installations.length > 0}
 			<section class="mt-8">
 				<h2 class="text-lg font-semibold">Installation history</h2>
@@ -186,3 +279,82 @@
 		{/if}
 	{/if}
 </main>
+
+{#if showServiceModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="service-title"
+			class="w-full max-w-md rounded-card bg-surface-elevated p-6"
+		>
+			<h2 id="service-title" class="text-lg font-semibold">Log service event</h2>
+			<form onsubmit={handleAddServiceEvent} class="mt-4 space-y-4">
+				<div>
+					<label for="service-action" class="block text-sm font-medium">Action</label>
+					<select
+						id="service-action"
+						required
+						bind:value={serviceAction}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					>
+						<option value="serviced">Serviced</option>
+						<option value="inspected">Inspected</option>
+						<option value="noted">Noted</option>
+					</select>
+				</div>
+				<div>
+					<label for="service-date" class="block text-sm font-medium">Date</label>
+					<input
+						id="service-date"
+						type="date"
+						required
+						bind:value={serviceDate}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="service-odometer" class="block text-sm font-medium">
+						Odometer at service (miles, optional)
+					</label>
+					<input
+						id="service-odometer"
+						type="number"
+						min="0"
+						step="1"
+						bind:value={serviceOdometerMiles}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="service-notes" class="block text-sm font-medium">Notes</label>
+					<textarea
+						id="service-notes"
+						rows="3"
+						bind:value={serviceNotes}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					></textarea>
+				</div>
+				{#if serviceError}
+					<p class="text-sm text-danger" aria-live="polite">{serviceError}</p>
+				{/if}
+				<div class="flex gap-3 pt-2">
+					<button
+						type="submit"
+						disabled={serviceSaving}
+						class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
+					>
+						{serviceSaving ? 'Saving…' : 'Log'}
+					</button>
+					<button
+						type="button"
+						onclick={() => (showServiceModal = false)}
+						class="rounded-button px-5 py-2 font-medium text-fg-muted"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}

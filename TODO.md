@@ -3,6 +3,5 @@
 Things that are deferred until a prerequisite lands or a follow up commit picks them up.
 
 - Build Zone 3 recent activity on the dashboard. Needs rides and service log data.
-- Build the service log section on the bike detail page. Needs an add service event form first.
 - Bike photo upload. Needs the Capacitor camera plugin and client side canvas resize.
 - `projectedReplacementDate` in `wear.ts`. Marked v2. Needs helpers for current installation start date, current wear meters, interval meters, and add days ISO.
