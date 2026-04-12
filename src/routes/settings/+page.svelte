@@ -23,6 +23,51 @@
 
 	loadUnitPreference();
 
+	type PackIndexEntry = {
+		id: string;
+		name: string;
+		description: string;
+		file: string;
+		components: number;
+	};
+	let availablePacks = $state<PackIndexEntry[]>([]);
+	let packsLoading = $state(false);
+
+	async function loadAvailablePacks() {
+		packsLoading = true;
+		try {
+			const res = await fetch('/packs/index.json');
+			if (!res.ok) throw new Error(`${res.status}`);
+			const data = await res.json();
+			availablePacks = data.packs ?? [];
+		} catch {
+			packStatus = 'Could not load available packs.';
+		} finally {
+			packsLoading = false;
+		}
+	}
+
+	async function downloadAndLoadPack(entry: PackIndexEntry) {
+		try {
+			const res = await fetch(`/packs/${entry.file}`);
+			if (!res.ok) throw new Error(`${res.status}`);
+			const text = await res.text();
+			const data = JSON.parse(text);
+			const pack = validatePack(data);
+			packData = pack;
+			packChecked = pack.components.map(() => true);
+			const newTypes = findNewCustomTypes(pack);
+			packNewTypes = newTypes;
+			packNewTypesChecked = newTypes.map(() => true);
+			packBikeId = '';
+			packCreateNew = !!pack.bike;
+			packStatus = '';
+			availablePacks = [];
+		} catch (err) {
+			packStatus = `Failed to load pack. ${err instanceof Error ? err.message : String(err)}`;
+		}
+	}
+
 	let packData = $state<Pack | null>(null);
 	let packChecked = $state<boolean[]>([]);
 	let packNewTypes = $state<PackComponent[]>([]);
@@ -557,13 +602,46 @@
 			Import a .truing data pack to add components and service intervals for a specific bike build.
 		</p>
 		{#if !packData}
-			<button
-				type="button"
-				onclick={handlePackFileSelect}
-				class="mt-4 rounded-button border border-border px-5 py-2 font-medium"
-			>
-				Import .truing pack
-			</button>
+			<div class="mt-4 flex flex-wrap gap-3">
+				<button
+					type="button"
+					onclick={loadAvailablePacks}
+					disabled={packsLoading}
+					class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
+				>
+					{packsLoading ? 'Loading…' : 'Browse available packs'}
+				</button>
+				<button
+					type="button"
+					onclick={handlePackFileSelect}
+					class="rounded-button border border-border px-5 py-2 font-medium"
+				>
+					Import from file
+				</button>
+			</div>
+
+			{#if availablePacks.length > 0}
+				<ul class="mt-4 space-y-2">
+					{#each availablePacks as entry (entry.id)}
+						<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
+							<div class="flex items-start justify-between gap-3">
+								<div class="min-w-0">
+									<p class="font-medium">{entry.name}</p>
+									<p class="text-sm text-fg-muted">{entry.description}</p>
+									<p class="text-xs text-fg-muted">{entry.components} components</p>
+								</div>
+								<button
+									type="button"
+									onclick={() => downloadAndLoadPack(entry)}
+									class="shrink-0 rounded-button bg-accent px-4 py-1.5 text-sm font-medium text-accent-fg"
+								>
+									Use
+								</button>
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		{:else}
 			<div class="mt-4 rounded-card border border-border bg-surface-elevated p-4">
 				<h3 class="font-semibold">{packData.name}</h3>

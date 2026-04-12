@@ -1,0 +1,11 @@
+{
+	"packs": [
+		{
+			"id": "cannondale-topstone-2-2025",
+			"name": "2025 Cannondale Topstone 2",
+			"description": "Shimano GRX 400, 10-speed, 2x, hydraulic disc, tubeless-ready. US spec.",
+			"file": "cannondale-topstone-2-2025.truing",
+			"components": 30
+		}
+	]
+}

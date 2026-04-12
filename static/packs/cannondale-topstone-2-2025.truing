@@ -1,0 +1,314 @@
+{
+	"format": "truing-pack",
+	"version": 1,
+	"name": "2025 Cannondale Topstone 2",
+	"description": "Shimano GRX 400, 10-speed, 2x, hydraulic disc, tubeless-ready. US spec, Large.",
+	"bike": {
+		"make": "Cannondale",
+		"model": "Topstone 2",
+		"year": 2025,
+		"type": "gravel"
+	},
+	"components": [
+		{
+			"type": "chain_8_9_10sp",
+			"name": "Shimano HG54 10-speed chain",
+			"category": "drivetrain",
+			"distance_meters": 3218688,
+			"time_days": 365,
+			"inspection_distance_meters": 804672,
+			"inspection_time_days": 30,
+			"notes": "Replace at 0.75% wear via Park CC-4.2 gauge."
+		},
+		{
+			"type": "cassette_8_9_10sp",
+			"name": "Shimano HG500 11-32T cassette",
+			"category": "drivetrain",
+			"distance_meters": 6437376,
+			"time_days": 730,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Replace every 3 chains or when teeth start hooking."
+		},
+		{
+			"type": "chainring",
+			"name": "Shimano GRX 400 chainrings (46/30T)",
+			"category": "drivetrain",
+			"distance_meters": 14484096,
+			"time_days": 1095,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Inspect for hooked teeth at each cassette change."
+		},
+		{
+			"type": "front_derailleur",
+			"name": "Shimano GRX 400 FD-RX400",
+			"category": "drivetrain",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Clean and lube pivots when shifting feels imprecise."
+		},
+		{
+			"type": "rear_derailleur",
+			"name": "Shimano GRX 400 RD-RX400 Shadow RD+",
+			"category": "drivetrain",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Replace pulleys separately as a wear item."
+		},
+		{
+			"type": "crankset",
+			"name": "Shimano GRX 400 crankset",
+			"category": "drivetrain",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Chainrings wear separately."
+		},
+		{
+			"type": "shifter",
+			"name": "Shimano GRX 400 ST-RX400 shifters",
+			"category": "drivetrain",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Replace shift cables first before suspecting the shifter."
+		},
+		{
+			"type": "shift_cable",
+			"name": "Shift cable (inner)",
+			"category": "cables",
+			"distance_meters": null,
+			"time_days": 365,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 30,
+			"notes": "Replace annually. Inspect where cable exits shifter for fraying."
+		},
+		{
+			"type": "cable_housing",
+			"name": "Cable housing",
+			"category": "cables",
+			"distance_meters": null,
+			"time_days": 730,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Replace every second cable change or when ends are crushed."
+		},
+		{
+			"type": "disc_pads_hydraulic",
+			"name": "Front brake pads",
+			"category": "brakes",
+			"distance_meters": 2414016,
+			"time_days": 365,
+			"inspection_distance_meters": 804672,
+			"inspection_time_days": 30,
+			"notes": "Replace when friction material is 1mm or less."
+		},
+		{
+			"type": "disc_pads_hydraulic",
+			"name": "Rear brake pads",
+			"category": "brakes",
+			"distance_meters": 2414016,
+			"time_days": 365,
+			"inspection_distance_meters": 804672,
+			"inspection_time_days": 30,
+			"notes": "Replace when friction material is 1mm or less."
+		},
+		{
+			"type": "brake_rotor",
+			"name": "Front rotor (Shimano RT30 160mm)",
+			"category": "brakes",
+			"distance_meters": 16093440,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Replace at Shimano minimum 1.5mm thickness."
+		},
+		{
+			"type": "brake_rotor",
+			"name": "Rear rotor (Shimano RT30 160mm)",
+			"category": "brakes",
+			"distance_meters": 16093440,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Replace at Shimano minimum 1.5mm thickness."
+		},
+		{
+			"type": "mineral_oil_shimano",
+			"name": "Brake fluid (Shimano mineral oil)",
+			"category": "brakes",
+			"distance_meters": null,
+			"time_days": 540,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Bleed every 12-24 months. Spongy lever means it is time."
+		},
+		{
+			"type": "brake_caliper_hydraulic",
+			"name": "Front brake caliper (GRX 400)",
+			"category": "brakes",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Clean pistons and reseat twice a year."
+		},
+		{
+			"type": "brake_caliper_hydraulic",
+			"name": "Rear brake caliper (GRX 400)",
+			"category": "brakes",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Clean pistons and reseat twice a year."
+		},
+		{
+			"type": "tire_gravel",
+			"name": "Front tire (WTB Riddler TCS 700x37c)",
+			"category": "wheels_tires",
+			"distance_meters": 4828032,
+			"time_days": 1095,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 30,
+			"notes": "Replace at tread wear indicators or visible casing threads."
+		},
+		{
+			"type": "tire_gravel",
+			"name": "Rear tire (WTB Riddler TCS 700x37c)",
+			"category": "wheels_tires",
+			"distance_meters": 4828032,
+			"time_days": 1095,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 30,
+			"notes": "Replace at tread wear indicators or visible casing threads."
+		},
+		{
+			"type": "tubeless_sealant_standard",
+			"name": "Tubeless sealant",
+			"category": "wheels_tires",
+			"distance_meters": null,
+			"time_days": 75,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 30,
+			"notes": "Refresh every 2-3 months. Check monthly with a thin stick through the valve core."
+		},
+		{
+			"type": "rim_tape_tubeless",
+			"name": "Rim tape (tubeless)",
+			"category": "wheels_tires",
+			"distance_meters": null,
+			"time_days": 365,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Inspect annually when refreshing sealant."
+		},
+		{
+			"type": "wheel_hub_sealed",
+			"name": "Front hub (Shimano TC500)",
+			"category": "wheels_tires",
+			"distance_meters": 12874752,
+			"time_days": 730,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 365,
+			"notes": "Sealed cartridge bearings. Replace when rough or developing play."
+		},
+		{
+			"type": "wheel_hub_sealed",
+			"name": "Rear hub (Shimano TC500)",
+			"category": "wheels_tires",
+			"distance_meters": 12874752,
+			"time_days": 730,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 365,
+			"notes": "Sealed cartridge bearings. Replace when rough or developing play."
+		},
+		{
+			"type": "bottom_bracket_sealed",
+			"name": "Bottom bracket (Shimano BSA 68mm)",
+			"category": "bearings",
+			"distance_meters": 20116800,
+			"time_days": 730,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 365,
+			"notes": "Replace when rough, creaky, or develops play."
+		},
+		{
+			"type": "headset_sealed",
+			"name": "Headset (integrated 1-1/8 to 1.5)",
+			"category": "bearings",
+			"distance_meters": null,
+			"time_days": 1460,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 365,
+			"notes": "Replace when indexed or rough. Annual clean and regrease extends life."
+		},
+		{
+			"type": "bar_tape",
+			"name": "Bar tape (Cannondale Knurl Cork)",
+			"category": "cockpit",
+			"distance_meters": null,
+			"time_days": 365,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 30,
+			"notes": "Replace annually or when visibly worn. Sweat salt corrodes bars over time."
+		},
+		{
+			"type": "saddle",
+			"name": "Saddle (Selle Royal SRX Open)",
+			"category": "cockpit",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 30,
+			"notes": "Lifetime unless rails or shell crack. Inspect rails near clamp monthly."
+		},
+		{
+			"type": "stem",
+			"name": "Stem (Cannondale 3, 100mm)",
+			"category": "cockpit",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime component. Torque check bolts every 6 months."
+		},
+		{
+			"type": "handlebar",
+			"name": "Handlebar (Cannondale 3, 440mm, 16 flare)",
+			"category": "cockpit",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime. Inspect for corrosion under tape annually."
+		},
+		{
+			"type": "frame",
+			"name": "Frame (Cannondale SmartForm C2 Alloy)",
+			"category": "frame",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime. Inspect for cracks twice a year, especially around welds and BB shell."
+		},
+		{
+			"type": "fork_rigid",
+			"name": "Fork (Cannondale Carbon)",
+			"category": "frame",
+			"distance_meters": null,
+			"time_days": null,
+			"inspection_distance_meters": null,
+			"inspection_time_days": 180,
+			"notes": "Lifetime. Replace after any significant crash."
+		}
+	]
+}
