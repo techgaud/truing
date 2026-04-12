@@ -9,8 +9,12 @@
 	import EvictionModal from '$lib/components/EvictionModal.svelte';
 	import { installGlobalHandlers } from '$lib/errors';
 	import { checkStorage, requestPersist } from '$lib/storage';
+	import { handleShortcutKeyDown, loadShortcutMode } from '$lib/shortcuts';
 
-	if (browser) installGlobalHandlers();
+	if (browser) {
+		installGlobalHandlers();
+		loadShortcutMode();
+	}
 
 	let evicted = $state(false);
 	let storageReady = $state(!browser);
@@ -47,6 +51,8 @@
 >
 	<Settings size={18} />
 </a>
+
+<svelte:window onkeydown={handleShortcutKeyDown} />
 
 <BottomNav />
 <HelpOverlay />

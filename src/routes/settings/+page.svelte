@@ -4,6 +4,7 @@
 	import { db } from '$lib/db';
 	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
 	import { fetchStravaGear, type StravaGear } from '$lib/strava';
+	import { setShortcutMode, getShortcutMode, type ShortcutMode } from '$lib/shortcuts';
 
 	let importing = $state(false);
 	let exportStatus = $state('');
@@ -188,6 +189,24 @@
 	<h1 class="text-2xl font-semibold">Settings</h1>
 
 	<section class="mt-8">
+		<h2 class="text-lg font-semibold">General</h2>
+		<div class="mt-3">
+			<label for="shortcut-mode" class="block text-sm font-medium">Keyboard shortcuts</label>
+			<select
+				id="shortcut-mode"
+				value={getShortcutMode()}
+				onchange={(e) => setShortcutMode((e.target as HTMLSelectElement).value as ShortcutMode)}
+				class="mt-1 w-full rounded-button border border-border bg-surface-elevated px-3 py-2 sm:w-64"
+			>
+				<option value="none">None</option>
+				<option value="gmail">Gmail-style (g d, g b, c, etc.)</option>
+				<option value="vim">Vim-style (j/k, h/l, gg, o, etc.)</option>
+			</select>
+			<p class="mt-1 text-xs text-fg-muted">Press ? on any screen to see available shortcuts.</p>
+		</div>
+	</section>
+
+	<section class="mt-10">
 		<h2 class="text-lg font-semibold">Strava</h2>
 		{#if stravaConnected}
 			<div class="mt-3 rounded-card border border-border bg-surface-elevated p-4">
