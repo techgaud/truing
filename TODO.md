@@ -2,12 +2,7 @@
 
 Things that are deferred until a prerequisite lands or a follow up commit picks them up.
 
-- GitHub issue template (.github/ISSUE_TEMPLATE/bug.yml). Structured bug report form with error code field.
-- Wire Capacitor local notifications to dashboard wear data. The notifications module exists but nothing calls scheduleWearReminder() from the dashboard yet.
-- Early warning notification threshold. Fire when a component crosses into "due soon" since the last check.
-- Settings notifications section. Show "Notifications are only available in the installed app" on web PWA.
-- Schema migration test fixture. Simulate a past schema version and replay through migration code.
-- License-check script (pnpm run license-check). Fail on non-AGPL-compatible transitive deps.
+- Per-component notification threshold override UI on the component detail page.
 - Onboarding auto-redirect. New users hitting / with zero bikes should redirect to /onboarding instead of showing the welcome inline.
 - Investigate runtime migration smoke test. Verify migration succeeded on app startup, trigger recovery UI on failure.
 - Pre-migration backup prompt. Before major version upgrades, prompt user to export first.

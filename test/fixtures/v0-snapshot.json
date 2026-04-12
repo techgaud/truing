@@ -1,0 +1,101 @@
+{
+	"description": "Synthetic v0 schema snapshot for migration testing. Represents a simpler past version with 6 tables, fewer indexes, and rides missing the conditions field.",
+	"bikes": [
+		{
+			"id": 1,
+			"name": "Topstone 2",
+			"make": "Cannondale",
+			"model": "Topstone 2",
+			"year": 2025,
+			"type": "gravel",
+			"starting_odometer_meters": 0,
+			"created_at": "2026-03-01T00:00:00Z",
+			"updated_at": "2026-03-01T00:00:00Z"
+		}
+	],
+	"components": [
+		{
+			"id": 1,
+			"type": "chain_11sp",
+			"name": "Shimano CN-HG601",
+			"initial_wear_meters": 0,
+			"created_at": "2026-03-01T00:00:00Z",
+			"updated_at": "2026-03-01T00:00:00Z"
+		},
+		{
+			"id": 2,
+			"type": "brake_pads_disc",
+			"name": "Shimano L05A resin",
+			"initial_wear_meters": 8000,
+			"created_at": "2026-03-01T00:00:00Z",
+			"updated_at": "2026-03-01T00:00:00Z"
+		}
+	],
+	"installations": [
+		{
+			"id": 1,
+			"component_id": 1,
+			"bike_id": 1,
+			"installed_at": "2026-03-01T00:00:00Z",
+			"installed_at_tz": "America/Chicago",
+			"created_at": "2026-03-01T00:00:00Z",
+			"updated_at": "2026-03-01T00:00:00Z"
+		},
+		{
+			"id": 2,
+			"component_id": 2,
+			"bike_id": 1,
+			"installed_at": "2026-03-01T00:00:00Z",
+			"installed_at_tz": "America/Chicago",
+			"created_at": "2026-03-01T00:00:00Z",
+			"updated_at": "2026-03-01T00:00:00Z"
+		}
+	],
+	"rides": [
+		{
+			"id": 1,
+			"bike_id": 1,
+			"started_at": "2026-03-10T14:00:00Z",
+			"started_at_tz": "America/Chicago",
+			"distance_meters": 32000,
+			"source": "manual",
+			"created_at": "2026-03-10T14:00:00Z",
+			"updated_at": "2026-03-10T14:00:00Z"
+		},
+		{
+			"id": 2,
+			"bike_id": 1,
+			"started_at": "2026-03-15T15:30:00Z",
+			"started_at_tz": "America/Chicago",
+			"distance_meters": 48000,
+			"duration_seconds": 7200,
+			"source": "gpx",
+			"created_at": "2026-03-15T15:30:00Z",
+			"updated_at": "2026-03-15T15:30:00Z"
+		},
+		{
+			"id": 3,
+			"bike_id": 1,
+			"started_at": "2026-03-20T10:00:00Z",
+			"started_at_tz": "America/Chicago",
+			"distance_meters": 25000,
+			"source": "strava",
+			"external_id": "strava_12345",
+			"created_at": "2026-03-20T10:00:00Z",
+			"updated_at": "2026-03-20T10:00:00Z"
+		}
+	],
+	"service_log": [
+		{
+			"id": 1,
+			"component_id": 1,
+			"bike_id": 1,
+			"performed_at": "2026-03-15T12:00:00Z",
+			"performed_at_tz": "America/Chicago",
+			"action": "inspected",
+			"notes": "Chain stretch at 0.5%, still good",
+			"created_at": "2026-03-15T12:00:00Z",
+			"updated_at": "2026-03-15T12:00:00Z"
+		}
+	]
+}
