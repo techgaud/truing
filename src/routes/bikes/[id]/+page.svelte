@@ -67,7 +67,8 @@
 	let addError = $state('');
 
 	let templateChecked = $state<boolean[]>([]);
-	let templateInstallDate = $state(todayISO());
+	let templateDates = $state<string[]>([]);
+	let templateDefaultDate = $state(todayISO());
 	let templateSaving = $state(false);
 	let templateError = $state('');
 
@@ -125,10 +126,16 @@
 
 	function openTemplateModal() {
 		if (!currentTemplate) return;
+		const today = todayISO();
 		templateChecked = currentTemplate.components.map(() => true);
-		templateInstallDate = todayISO();
+		templateDates = currentTemplate.components.map(() => today);
+		templateDefaultDate = today;
 		templateError = '';
 		showLoadTemplate = true;
+	}
+
+	function applyDefaultToAllDates() {
+		templateDates = templateDates.map(() => templateDefaultDate);
 	}
 
 	async function handleAddOne(e: SubmitEvent) {
@@ -182,8 +189,10 @@
 
 	async function handleApplyTemplate() {
 		if (templateSaving || !currentTemplate) return;
-		const selected = currentTemplate.components.filter((_, i) => templateChecked[i]);
-		if (selected.length === 0) {
+		const selectedEntries = currentTemplate.components
+			.map((entry, i) => ({ entry, dateStr: templateDates[i] }))
+			.filter((_, i) => templateChecked[i]);
+		if (selectedEntries.length === 0) {
 			templateError = 'Select at least one component.';
 			return;
 		}
@@ -192,9 +201,8 @@
 		try {
 			const now = new Date().toISOString();
 			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			const installedAt = new Date(templateInstallDate).toISOString();
 			await db.transaction('rw', db.components, db.installations, async () => {
-				for (const entry of selected) {
+				for (const { entry, dateStr } of selectedEntries) {
 					const componentId = (await db.components.add({
 						type: entry.type,
 						name: entry.default_name,
@@ -205,7 +213,7 @@
 					await db.installations.add({
 						component_id: componentId,
 						bike_id: bikeId,
-						installed_at: installedAt,
+						installed_at: new Date(dateStr).toISOString(),
 						installed_at_tz: tz,
 						created_at: now,
 						updated_at: now
@@ -409,27 +417,45 @@
 			<h2 id="template-title" class="text-lg font-semibold">
 				Typical {currentTemplate.label.toLowerCase()} components
 			</h2>
-			<p class="mt-2 text-sm text-fg-muted">Uncheck anything that doesn't apply.</p>
-			<ul class="mt-4 space-y-2">
+			<p class="mt-2 text-sm text-fg-muted">
+				Uncheck anything that doesn't apply. Each row has its own install date.
+			</p>
+			<div class="mt-4 rounded-card border border-border bg-surface p-3">
+				<label for="template-default-date" class="block text-sm font-medium">
+					Default install date
+				</label>
+				<div class="mt-1 flex gap-2">
+					<input
+						id="template-default-date"
+						type="date"
+						bind:value={templateDefaultDate}
+						class="flex-1 rounded-button border border-border bg-surface-elevated px-3 py-2"
+					/>
+					<button
+						type="button"
+						onclick={applyDefaultToAllDates}
+						class="rounded-button border border-border px-3 py-2 text-sm"
+					>
+						Apply to all
+					</button>
+				</div>
+			</div>
+			<ul class="mt-4 space-y-3">
 				{#each currentTemplate.components as entry, i (i)}
-					<li>
-						<label class="flex items-center gap-3">
+					<li class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+						<label class="flex min-w-0 flex-1 items-center gap-3">
 							<input type="checkbox" bind:checked={templateChecked[i]} />
-							<span>{entry.default_name}</span>
+							<span class="truncate">{entry.default_name}</span>
 						</label>
+						<input
+							type="date"
+							bind:value={templateDates[i]}
+							disabled={!templateChecked[i]}
+							class="rounded-button border border-border bg-surface px-2 py-1 text-sm disabled:opacity-50"
+						/>
 					</li>
 				{/each}
 			</ul>
-			<div class="mt-4">
-				<label for="template-date" class="block text-sm font-medium">Install date</label>
-				<input
-					id="template-date"
-					type="date"
-					required
-					bind:value={templateInstallDate}
-					class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
-				/>
-			</div>
 			{#if templateError}
 				<p class="mt-2 text-sm text-danger" aria-live="polite">{templateError}</p>
 			{/if}
