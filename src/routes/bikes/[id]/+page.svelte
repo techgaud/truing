@@ -39,6 +39,12 @@
 		return active.map((inst, i) => ({ installation: inst, component: comps[i] }));
 	});
 
+	const recentRides = liveQuery(async () => {
+		const rides = await db.rides.where({ bike_id: bikeId }).toArray();
+		rides.sort((a, b) => b.started_at.localeCompare(a.started_at));
+		return rides.slice(0, 5);
+	});
+
 	const currentTemplate = $derived.by(() => {
 		const type = $bike?.type;
 		if (!type || type === 'other') return null;
@@ -371,6 +377,45 @@
 				>
 					Add one component
 				</button>
+			{/if}
+		</section>
+
+		<section class="mt-10">
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold">Recent rides</h2>
+				{#if $recentRides && $recentRides.length > 0}
+					<a href={resolve('/rides')} class="text-sm text-accent">See all</a>
+				{/if}
+			</div>
+
+			{#if $recentRides?.length === 0}
+				<p class="mt-3 text-fg-muted">No rides yet for this bike.</p>
+			{:else if $recentRides}
+				<ul class="mt-3 space-y-2">
+					{#each $recentRides as ride (ride.id)}
+						<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
+							<div class="flex items-start justify-between gap-3">
+								<div class="min-w-0">
+									<p class="font-medium">
+										{(ride.distance_meters / 1609.344).toFixed(1)} mi
+									</p>
+									<p class="text-sm text-fg-muted">
+										{new Date(ride.started_at).toLocaleDateString(undefined, {
+											month: 'short',
+											day: 'numeric',
+											year: 'numeric'
+										})}
+									</p>
+								</div>
+								<span
+									class="shrink-0 rounded-button border border-border px-2 py-0.5 text-xs text-fg-muted capitalize"
+								>
+									{ride.source}
+								</span>
+							</div>
+						</li>
+					{/each}
+				</ul>
 			{/if}
 		</section>
 	{/if}
