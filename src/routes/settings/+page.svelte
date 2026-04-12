@@ -23,6 +23,7 @@
 	} from '$lib/units';
 	import { isCapacitorNative } from '$lib/platform';
 	import { sendTestNotification } from '$lib/notifications';
+	import { getPremigrationBackup, clearPremigrationBackup } from '$lib/premigration';
 
 	loadUnitPreference();
 
@@ -203,6 +204,40 @@
 		} finally {
 			packImporting = false;
 		}
+	}
+
+	let premigrationBackup = $state<{
+		exportedAt: string;
+		fromVersion: number;
+		toVersion: number;
+		json: string;
+	} | null>(null);
+	let premigrationRestoring = $state(false);
+	getPremigrationBackup().then((b) => (premigrationBackup = b));
+
+	async function handlePremigrationRestore() {
+		if (!premigrationBackup) return;
+		if (!confirm('This will replace all current data with the pre-migration backup. Continue?'))
+			return;
+		premigrationRestoring = true;
+		try {
+			const result = await importAll(premigrationBackup.json, 'replace');
+			toast.success(
+				`Restored ${result.bikes.added} bikes, ${result.rides.added} rides, ${result.serviceLog.added} service entries.`
+			);
+			await clearPremigrationBackup();
+			premigrationBackup = null;
+		} catch (err) {
+			toast.error(`Restore failed. ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			premigrationRestoring = false;
+		}
+	}
+
+	async function handlePremigrationDismiss() {
+		await clearPremigrationBackup();
+		premigrationBackup = null;
+		toast.info('Pre-migration backup cleared.');
 	}
 
 	let storageInfo = $state<StorageEstimate | null>(null);
@@ -702,6 +737,30 @@
 			</button>
 		</div>
 	</section>
+
+	{#if premigrationBackup}
+		<section class="mt-6 rounded-card border border-warning bg-surface-elevated p-4">
+			<p class="text-sm font-medium">Pre-migration backup available</p>
+			<p class="mt-1 text-xs text-fg-muted">
+				Created {new Date(premigrationBackup.exportedAt).toLocaleDateString()} before upgrading from schema
+				v{premigrationBackup.fromVersion} to v{premigrationBackup.toVersion}. If something went
+				wrong with the upgrade, you can restore this backup.
+			</p>
+			<div class="mt-3 flex gap-3">
+				<button
+					type="button"
+					onclick={handlePremigrationRestore}
+					disabled={premigrationRestoring}
+					class="rounded-button border border-border px-4 py-1.5 text-sm font-medium disabled:opacity-50"
+				>
+					{premigrationRestoring ? 'Restoring…' : 'Restore'}
+				</button>
+				<button type="button" onclick={handlePremigrationDismiss} class="text-sm text-fg-muted">
+					Dismiss
+				</button>
+			</div>
+		</section>
+	{/if}
 
 	<section class="mt-10">
 		<h2 class="text-lg font-semibold">Data packs</h2>

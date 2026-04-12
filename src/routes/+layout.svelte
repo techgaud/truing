@@ -14,6 +14,7 @@
 	import { loadUnitPreference } from '$lib/units';
 	import { isCapacitorNative } from '$lib/platform';
 	import { runNotificationCheck } from '$lib/notifications';
+	import { ensurePremigrationBackup } from '$lib/premigration';
 	import { db } from '$lib/db';
 
 	if (browser) {
@@ -43,11 +44,14 @@
 	let storageReady = $state(!browser);
 
 	if (browser) {
-		checkStorage().then((result) => {
-			evicted = result === 'evicted';
-			storageReady = true;
-			requestPersist();
-		});
+		ensurePremigrationBackup()
+			.catch(() => {})
+			.then(() => checkStorage())
+			.then((result) => {
+				evicted = result === 'evicted';
+				storageReady = true;
+				requestPersist();
+			});
 	}
 
 	let { children } = $props();
