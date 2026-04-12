@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { liveQuery } from 'dexie';
 	import { exportAll, importAll, backupFilename, getLastBackupAge } from '$lib/backup';
+	import { toast } from '$lib/toast';
 	import { db } from '$lib/db';
 	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
 	import { getStorageEstimate, type StorageEstimate } from '$lib/storage';
@@ -41,7 +42,7 @@
 			const data = await res.json();
 			availablePacks = data.packs ?? [];
 		} catch {
-			packStatus = 'Could not load available packs.';
+			toast.error('Could not load available packs.');
 		} finally {
 			packsLoading = false;
 		}
@@ -62,10 +63,9 @@
 			packBikeId = '';
 			packCreateNew = !!pack.bike;
 			packInstallDate = todayISO();
-			packStatus = '';
 			availablePacks = [];
 		} catch (err) {
-			packStatus = `Failed to load pack. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Failed to load pack. ${err instanceof Error ? err.message : String(err)}`);
 		}
 	}
 
@@ -76,7 +76,6 @@
 	let packBikeId = $state<number | ''>('');
 	let packCreateNew = $state(false);
 	let packInstallDate = $state(todayISO());
-	let packStatus = $state('');
 	let packImporting = $state(false);
 
 	function todayISO(): string {
@@ -103,9 +102,8 @@
 				packBikeId = '';
 				packCreateNew = !!pack.bike;
 				packInstallDate = todayISO();
-				packStatus = '';
 			} catch (err) {
-				packStatus = `Failed to load pack. ${err instanceof Error ? err.message : String(err)}`;
+				toast.error(`Failed to load pack. ${err instanceof Error ? err.message : String(err)}`);
 			}
 		};
 		input.click();
@@ -114,7 +112,6 @@
 	async function handlePackApply() {
 		if (!packData) return;
 		packImporting = true;
-		packStatus = '';
 		try {
 			let bikeId: number;
 			if (packCreateNew && packData.bike) {
@@ -139,7 +136,7 @@
 				})) as number;
 			} else {
 				if (packBikeId === '') {
-					packStatus = 'Select a bike to apply the pack to.';
+					toast.warning('Select a bike to apply the pack to.');
 					packImporting = false;
 					return;
 				}
@@ -148,10 +145,10 @@
 			const selectedComponents = packData.components.filter((_, i) => packChecked[i]);
 			const selectedNewTypes = packNewTypes.filter((_, i) => packNewTypesChecked[i]);
 			const result = await applyPack(bikeId, selectedComponents, selectedNewTypes, packInstallDate);
-			packStatus = `Applied! ${result.added} component${result.added !== 1 ? 's' : ''} added.`;
+			toast.success(`Applied! ${result.added} component${result.added !== 1 ? 's' : ''} added.`);
 			packData = null;
 		} catch (err) {
-			packStatus = `Apply failed. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Apply failed. ${err instanceof Error ? err.message : String(err)}`);
 		} finally {
 			packImporting = false;
 		}
@@ -161,13 +158,10 @@
 	getStorageEstimate().then((est) => (storageInfo = est));
 
 	let importing = $state(false);
-	let exportStatus = $state('');
-	let importStatus = $state('');
 	let lastBackupDays = $state<number | null>(null);
 	getLastBackupAge().then((d) => (lastBackupDays = d));
 
 	async function handleExport() {
-		exportStatus = '';
 		try {
 			const json = await exportAll();
 			const blob = new Blob([json], { type: 'application/json' });
@@ -177,10 +171,10 @@
 			a.download = backupFilename();
 			a.click();
 			URL.revokeObjectURL(url);
-			exportStatus = 'Backup downloaded.';
+			toast.success('Backup downloaded.');
 			lastBackupDays = 0;
 		} catch (err) {
-			exportStatus = `Export failed. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Export failed. ${err instanceof Error ? err.message : String(err)}`);
 		}
 	}
 
@@ -196,12 +190,13 @@
 					return;
 			}
 			importing = true;
-			importStatus = '';
 			try {
 				const text = await file.text();
 				const result = await importAll(text, mode);
 				if (mode === 'replace') {
-					importStatus = `Restored ${result.bikes.added} bikes, ${result.rides.added} rides, ${result.serviceLog.added} service log entries.`;
+					toast.success(
+						`Restored ${result.bikes.added} bikes, ${result.rides.added} rides, ${result.serviceLog.added} service log entries.`
+					);
 				} else {
 					const parts = [];
 					if (result.bikes.added) parts.push(`${result.bikes.added} new bikes`);
@@ -211,11 +206,12 @@
 					if (result.serviceLog.added) parts.push(`${result.serviceLog.added} new service entries`);
 					if (result.serviceLog.skipped)
 						parts.push(`${result.serviceLog.skipped} service entries skipped`);
-					importStatus =
-						parts.length > 0 ? `Merged. ${parts.join(', ')}.` : 'Nothing new to import.';
+					toast.success(
+						parts.length > 0 ? `Merged. ${parts.join(', ')}.` : 'Nothing new to import.'
+					);
 				}
 			} catch (err) {
-				importStatus = `Import failed. ${err instanceof Error ? err.message : String(err)}`;
+				toast.error(`Import failed. ${err instanceof Error ? err.message : String(err)}`);
 			} finally {
 				importing = false;
 			}
@@ -228,7 +224,6 @@
 	let stravaClientId = $state('');
 	let stravaClientSecret = $state('');
 	let stravaSaving = $state(false);
-	let stravaStatus = $state('');
 	let passphrase = $state('');
 	let keyUnlocked = $state(hasSessionKey());
 
@@ -249,7 +244,7 @@
 				gearMapping[gear.id] = linked?.id ?? '';
 			}
 		} catch (err) {
-			stravaStatus = `Failed to load gear. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Failed to load gear. ${err instanceof Error ? err.message : String(err)}`);
 		} finally {
 			gearLoading = false;
 		}
@@ -270,7 +265,7 @@
 				});
 			}
 		}
-		stravaStatus = 'Gear mapping saved.';
+		toast.success('Gear mapping saved.');
 	}
 
 	const stravaConnected = $derived(
@@ -283,23 +278,22 @@
 			await unlockWithPassphrase(passphrase);
 			keyUnlocked = true;
 			passphrase = '';
-			stravaStatus = 'Unlocked.';
+			toast.success('Unlocked.');
 		} catch (err) {
-			stravaStatus = `Unlock failed. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Unlock failed. ${err instanceof Error ? err.message : String(err)}`);
 		}
 	}
 
 	async function handleStravaSave() {
 		if (!keyUnlocked) {
-			stravaStatus = 'Unlock with your passphrase first.';
+			toast.warning('Unlock with your passphrase first.');
 			return;
 		}
 		if (!stravaClientId.trim() || !stravaClientSecret.trim()) {
-			stravaStatus = 'Both fields are required.';
+			toast.warning('Both fields are required.');
 			return;
 		}
 		stravaSaving = true;
-		stravaStatus = '';
 		try {
 			const encrypted = await encryptField(stravaClientSecret.trim());
 			await db.strava_auth.put({
@@ -313,9 +307,9 @@
 				athlete_username: '',
 				measurement_preference: 'feet'
 			});
-			stravaStatus = 'Credentials saved. Now connect to authorize.';
+			toast.success('Credentials saved. Now connect to authorize.');
 		} catch (err) {
-			stravaStatus = `Save failed. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Save failed. ${err instanceof Error ? err.message : String(err)}`);
 		} finally {
 			stravaSaving = false;
 		}
@@ -323,7 +317,7 @@
 
 	function handleStravaConnect() {
 		if (!$stravaAuth?.client_id) {
-			stravaStatus = 'Save your credentials first.';
+			toast.warning('Save your credentials first.');
 			return;
 		}
 		const params = new URLSearchParams({
@@ -344,7 +338,7 @@
 		await db.strava_auth.delete(1);
 		stravaClientId = '';
 		stravaClientSecret = '';
-		stravaStatus = 'Disconnected.';
+		toast.info('Disconnected.');
 	}
 
 	$effect(() => {
@@ -539,9 +533,6 @@
 				</div>
 			</div>
 		{/if}
-		{#if stravaStatus}
-			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{stravaStatus}</p>
-		{/if}
 	</section>
 
 	<section class="mt-10">
@@ -596,12 +587,6 @@
 				{importing ? 'Importing…' : 'Merge (keep existing)'}
 			</button>
 		</div>
-		{#if exportStatus}
-			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{exportStatus}</p>
-		{/if}
-		{#if importStatus}
-			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{importStatus}</p>
-		{/if}
 	</section>
 
 	<section class="mt-10">
@@ -742,9 +727,6 @@
 					</button>
 				</div>
 			</div>
-		{/if}
-		{#if packStatus}
-			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{packStatus}</p>
 		{/if}
 	</section>
 

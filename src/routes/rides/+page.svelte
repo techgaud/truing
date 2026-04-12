@@ -5,6 +5,7 @@
 	import { parseFile } from '$lib/import/parse';
 	import { syncStrava } from '$lib/strava';
 	import { haptic } from '$lib/haptics';
+	import { toast } from '$lib/toast';
 	import Fab from '$lib/components/Fab.svelte';
 	import { formatDistance } from '$lib/units';
 	const SWIPE_THRESHOLD = 80;
@@ -115,7 +116,6 @@
 		}
 	}
 
-	let importStatus = $state('');
 	let syncing = $state(false);
 
 	const stravaAuth = liveQuery(() => db.strava_auth.get(1));
@@ -125,15 +125,13 @@
 
 	async function handleStravaSync() {
 		syncing = true;
-		importStatus = '';
 		try {
 			const result = await syncStrava();
-			importStatus = `Strava sync done. ${result.imported} new rides, ${result.skipped} skipped.`;
+			toast.success(`Strava sync done. ${result.imported} new rides, ${result.skipped} skipped.`);
 		} catch (err) {
-			importStatus = `Sync failed. ${err instanceof Error ? err.message : String(err)}`;
+			toast.error(`Sync failed. ${err instanceof Error ? err.message : String(err)}`);
 		} finally {
 			syncing = false;
-			setTimeout(() => (importStatus = ''), 8000);
 		}
 	}
 
@@ -151,7 +149,7 @@
 		input.onchange = async () => {
 			const files = input.files;
 			if (!files || files.length === 0) return;
-			importStatus = `Importing ${files.length} file${files.length > 1 ? 's' : ''}…`;
+			toast.info(`Importing ${files.length} file${files.length > 1 ? 's' : ''}…`);
 			let imported = 0;
 			let failed = 0;
 			for (const file of files) {
@@ -186,8 +184,9 @@
 					failed++;
 				}
 			}
-			importStatus = `Imported ${imported} ride${imported !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}.`;
-			setTimeout(() => (importStatus = ''), 5000);
+			toast.success(
+				`Imported ${imported} ride${imported !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}.`
+			);
 		};
 		input.click();
 	}
@@ -237,10 +236,6 @@
 			</div>
 		{/if}
 	</header>
-
-	{#if importStatus}
-		<p class="mt-4 text-sm text-fg-muted" aria-live="polite">{importStatus}</p>
-	{/if}
 
 	{#if $rows?.length === 0}
 		<div class="mt-12 flex flex-col items-center text-center">
