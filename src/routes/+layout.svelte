@@ -2,9 +2,13 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { resolve } from '$app/paths';
+	import { browser } from '$app/environment';
 	import Settings from 'lucide-svelte/icons/settings';
 	import HelpOverlay from '$lib/components/HelpOverlay.svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
+	import { installGlobalHandlers } from '$lib/errors';
+
+	if (browser) installGlobalHandlers();
 
 	let { children } = $props();
 </script>
