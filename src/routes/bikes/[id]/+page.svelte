@@ -94,7 +94,7 @@
 	const MAX_PHOTO_DIM = 1024;
 	const JPEG_QUALITY = 0.85;
 
-	async function resizeImage(file: File): Promise<Blob> {
+	async function resizeImage(file: Blob): Promise<Blob> {
 		return new Promise((resolve, reject) => {
 			const img = new Image();
 			img.onload = () => {
@@ -122,23 +122,48 @@
 	}
 
 	async function handlePhotoUpload() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = 'image/*';
-		input.onchange = async () => {
-			const file = input.files?.[0];
-			if (!file) return;
+		try {
+			const blob = await pickPhoto();
+			if (!blob) return;
+			const resized = await resizeImage(blob);
+			await db.bikes.update(bikeId, {
+				photo_blob: resized,
+				updated_at: new Date().toISOString()
+			});
+		} catch (err) {
+			alert(`Photo upload failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
+	async function pickPhoto(): Promise<Blob | null> {
+		if (
+			(
+				window as { Capacitor?: { isNativePlatform?: () => boolean } }
+			).Capacitor?.isNativePlatform?.()
+		) {
 			try {
-				const resized = await resizeImage(file);
-				await db.bikes.update(bikeId, {
-					photo_blob: resized,
-					updated_at: new Date().toISOString()
+				const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
+				const photo = await Camera.getPhoto({
+					quality: 90,
+					allowEditing: false,
+					resultType: CameraResultType.Uri,
+					source: CameraSource.Prompt
 				});
-			} catch (err) {
-				alert(`Photo upload failed. ${err instanceof Error ? err.message : String(err)}`);
+				if (!photo.webPath) return null;
+				const res = await fetch(photo.webPath);
+				return res.blob();
+			} catch {
+				// user cancelled or plugin unavailable
+				return null;
 			}
-		};
-		input.click();
+		}
+		return new Promise((resolve) => {
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.accept = 'image/*';
+			input.onchange = () => resolve(input.files?.[0] ?? null);
+			input.click();
+		});
 	}
 
 	async function handlePhotoRemove() {
