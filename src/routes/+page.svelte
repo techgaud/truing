@@ -267,15 +267,20 @@
 		<p class="text-fg-muted">Loading…</p>
 	{:else if $data.status === 'no_bikes'}
 		<div class="flex min-h-[60dvh] flex-col items-center justify-center text-center">
-			<h1 class="text-2xl font-semibold">Welcome to Truing</h1>
-			<p class="mt-3 text-fg-muted">Track your bike's components and stay on top of maintenance.</p>
+			<p class="text-2xl font-semibold">Welcome to</p>
+			<h1 class="text-5xl font-semibold">Truing</h1>
+			<p class="mt-2 text-fg-muted">Keep your bike running true.</p>
+			<p class="mt-6 text-sm text-fg-muted">
+				Track your bike's components, know when things need attention, and stay on top of
+				maintenance.
+			</p>
 			<a
 				href={resolve('/bikes/new')}
 				class="mt-8 rounded-button bg-accent px-5 py-3 font-medium text-accent-fg"
 			>
 				Add your first bike
 			</a>
-			<a href={resolve('/onboarding')} class="mt-4 text-sm text-fg-muted">Learn more</a>
+			<p class="mt-12 text-xs text-fg-muted">Tip. Press ? on any screen for help.</p>
 		</div>
 	{:else if $data.status === 'no_components'}
 		<h1 class="text-2xl font-semibold">Dashboard</h1>
