@@ -398,6 +398,21 @@
 			{#if $bike.type}
 				<p class="text-fg-muted capitalize">{$bike.type}</p>
 			{/if}
+			{#if $installed}
+				{@const totalSpendCents = $installed.reduce(
+					(sum, r) => sum + (r.component?.purchase_price_cents ?? 0),
+					0
+				)}
+				{#if totalSpendCents > 0}
+					{@const partCount = $installed.filter((r) => r.component?.purchase_price_cents).length}
+					<p class="mt-1 text-sm text-fg-muted">
+						Total components ${(totalSpendCents / 100).toFixed(2)} across {partCount} part{partCount !==
+						1
+							? 's'
+							: ''}.
+					</p>
+				{/if}
+			{/if}
 			{#if $bike.archived_at}
 				<p class="mt-2 text-sm text-fg-muted">Archived.</p>
 			{:else}

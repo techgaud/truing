@@ -217,6 +217,14 @@
 					></div>
 				</div>
 			{/if}
+			{#if snap.component.purchase_price_cents != null && snap.component.purchase_price_cents > 0 && snap.wearMeters > 0}
+				{@const priceDollars = snap.component.purchase_price_cents / 100}
+				{@const wearMiles = snap.wearMeters / METERS_PER_MILE}
+				{@const centsPerMile = (snap.component.purchase_price_cents / wearMiles).toFixed(1)}
+				<p class="mt-3 text-sm text-fg-muted">
+					${priceDollars.toFixed(2)} · {wearMiles.toFixed(0)} mi · {centsPerMile}¢/mi
+				</p>
+			{/if}
 		</section>
 
 		<button

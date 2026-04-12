@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { importAll } from '$lib/backup';
 	import { writeCanary, startFresh } from '$lib/storage';
+	import { isIOSSafari, isStandalonePWA } from '$lib/platform';
 
 	let { onresolved }: { onresolved: () => void } = $props();
 	let importing = $state(false);
@@ -47,6 +48,13 @@
 			This can happen if your browser ran low on space, you cleared site data, or you haven't
 			visited in a while. You can restore from a backup file or start over.
 		</p>
+
+		{#if isIOSSafari() && !isStandalonePWA()}
+			<p class="mt-3 rounded-card bg-warning/10 p-3 text-sm">
+				To prevent this in the future, install Truing as a PWA. Tap the share button below and
+				select "Add to Home Screen." Installed apps keep their data.
+			</p>
+		{/if}
 
 		{#if status}
 			<p class="mt-3 text-sm text-danger" aria-live="polite">{status}</p>
