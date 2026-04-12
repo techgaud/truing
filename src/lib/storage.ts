@@ -34,6 +34,27 @@ export async function requestPersist(): Promise<boolean> {
 	return false;
 }
 
+export type StorageEstimate = {
+	usageBytes: number;
+	quotaBytes: number;
+	usagePercent: number;
+	persisted: boolean;
+};
+
+export async function getStorageEstimate(): Promise<StorageEstimate | null> {
+	if (!navigator.storage?.estimate) return null;
+	const est = await navigator.storage.estimate();
+	const usage = est.usage ?? 0;
+	const quota = est.quota ?? 1;
+	const persisted = navigator.storage?.persisted ? await navigator.storage.persisted() : false;
+	return {
+		usageBytes: usage,
+		quotaBytes: quota,
+		usagePercent: Math.round((usage / quota) * 100),
+		persisted
+	};
+}
+
 export async function startFresh(): Promise<void> {
 	await db.transaction(
 		'rw',

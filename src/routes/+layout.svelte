@@ -8,6 +8,7 @@
 	import BottomNav from '$lib/components/BottomNav.svelte';
 	import EvictionModal from '$lib/components/EvictionModal.svelte';
 	import UpdateBanner from '$lib/components/UpdateBanner.svelte';
+	import IOSInstallPrompt from '$lib/components/IOSInstallPrompt.svelte';
 	import { installGlobalHandlers } from '$lib/errors';
 	import { checkStorage, requestPersist } from '$lib/storage';
 	import { handleShortcutKeyDown, loadShortcutMode } from '$lib/shortcuts';
@@ -58,3 +59,4 @@
 <BottomNav />
 <HelpOverlay />
 <UpdateBanner />
+<IOSInstallPrompt />

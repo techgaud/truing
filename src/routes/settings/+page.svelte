@@ -3,8 +3,12 @@
 	import { exportAll, importAll } from '$lib/backup';
 	import { db } from '$lib/db';
 	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
+	import { getStorageEstimate, type StorageEstimate } from '$lib/storage';
 	import { fetchStravaGear, type StravaGear } from '$lib/strava';
 	import { setShortcutMode, getShortcutMode, type ShortcutMode } from '$lib/shortcuts';
+
+	let storageInfo = $state<StorageEstimate | null>(null);
+	getStorageEstimate().then((est) => (storageInfo = est));
 
 	let importing = $state(false);
 	let exportStatus = $state('');
@@ -396,4 +400,29 @@
 			<p class="mt-3 text-sm text-fg-muted" aria-live="polite">{importStatus}</p>
 		{/if}
 	</section>
+
+	{#if storageInfo}
+		<section class="mt-10">
+			<h2 class="text-lg font-semibold">Storage</h2>
+			<div class="mt-3 space-y-2 text-sm">
+				<p>
+					Using {(storageInfo.usageBytes / 1024 / 1024).toFixed(1)} MB of {(
+						storageInfo.quotaBytes /
+						1024 /
+						1024
+					).toFixed(0)} MB ({storageInfo.usagePercent}%).
+				</p>
+				<p class="text-fg-muted">
+					{storageInfo.persisted
+						? 'Storage is persistent. Your browser will not clear it automatically.'
+						: 'Storage is not persistent. Your browser may clear data under disk pressure.'}
+				</p>
+				{#if storageInfo.usagePercent >= 85}
+					<p class="text-warning">
+						Storage is getting full. Export a backup and consider clearing old data.
+					</p>
+				{/if}
+			</div>
+		</section>
+	{/if}
 </main>
