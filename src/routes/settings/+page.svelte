@@ -21,8 +21,59 @@
 		formatDistanceInt,
 		type UnitSystem
 	} from '$lib/units';
+	import { isCapacitorNative } from '$lib/platform';
+	import { sendTestNotification } from '$lib/notifications';
 
 	loadUnitPreference();
+
+	const isNative = isCapacitorNative();
+	let notificationsEnabled = $state(true);
+	let notificationThreshold = $state(90);
+	let testingSending = $state(false);
+
+	if (typeof window !== 'undefined') {
+		db.settings.get('notifications_enabled').then((s) => {
+			if (s?.value === false) notificationsEnabled = false;
+		});
+		db.settings.get('notification_threshold_pct').then((s) => {
+			if (typeof s?.value === 'number') notificationThreshold = s.value;
+		});
+	}
+
+	async function saveNotificationEnabled(enabled: boolean) {
+		notificationsEnabled = enabled;
+		await db.settings.put({
+			key: 'notifications_enabled',
+			value: enabled,
+			updated_at: new Date().toISOString()
+		});
+		toast.success(enabled ? 'Notifications enabled.' : 'Notifications disabled.');
+	}
+
+	async function saveNotificationThreshold() {
+		const clamped = Math.min(99, Math.max(50, notificationThreshold));
+		notificationThreshold = clamped;
+		await db.settings.put({
+			key: 'notification_threshold_pct',
+			value: clamped,
+			updated_at: new Date().toISOString()
+		});
+		toast.success(`Threshold set to ${clamped}%.`);
+	}
+
+	async function handleTestNotification() {
+		testingSending = true;
+		try {
+			const ok = await sendTestNotification();
+			if (ok) {
+				toast.success('Test notification sent. Check your notification shade.');
+			} else {
+				toast.warning('Notification permission was denied or not available.');
+			}
+		} finally {
+			testingSending = false;
+		}
+	}
 
 	type PackIndexEntry = {
 		id: string;
@@ -390,6 +441,69 @@
 			</select>
 			<p class="mt-1 text-xs text-fg-muted">Press ? on any screen to see available shortcuts.</p>
 		</div>
+	</section>
+
+	<section class="mt-10">
+		<h2 class="text-lg font-semibold">Notifications</h2>
+		{#if isNative}
+			<div class="mt-3 flex items-center gap-3">
+				<label class="text-sm font-medium" for="notif-toggle">Wear notifications</label>
+				<button
+					id="notif-toggle"
+					type="button"
+					role="switch"
+					aria-checked={notificationsEnabled}
+					onclick={() => saveNotificationEnabled(!notificationsEnabled)}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors {notificationsEnabled
+						? 'bg-accent'
+						: 'bg-border'}"
+				>
+					<span
+						class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform {notificationsEnabled
+							? 'translate-x-5'
+							: 'translate-x-0'}"
+					></span>
+				</button>
+			</div>
+			{#if notificationsEnabled}
+				<div class="mt-4">
+					<label for="notif-threshold" class="block text-sm font-medium">
+						Early warning threshold
+					</label>
+					<div class="mt-1 flex items-center gap-3">
+						<input
+							id="notif-threshold"
+							type="number"
+							min="50"
+							max="99"
+							bind:value={notificationThreshold}
+							onchange={saveNotificationThreshold}
+							class="w-20 rounded-button border border-border bg-surface-elevated px-3 py-2 text-sm"
+						/>
+						<span class="text-sm text-fg-muted">%</span>
+					</div>
+					<p class="mt-1 text-xs text-fg-muted">
+						You will be notified at this threshold, then again at 95% and 99%. Per-component
+						overrides can be set on each component's detail page.
+					</p>
+				</div>
+				<div class="mt-4">
+					<button
+						type="button"
+						onclick={handleTestNotification}
+						disabled={testingSending}
+						class="rounded-button border border-border px-5 py-2 text-sm font-medium disabled:opacity-50"
+					>
+						{testingSending ? 'Sending…' : 'Send test notification'}
+					</button>
+				</div>
+			{/if}
+		{:else}
+			<p class="mt-3 text-sm text-fg-muted">
+				Notifications are only available in the installed app. Install Truing on your Android device
+				to receive wear alerts.
+			</p>
+		{/if}
 	</section>
 
 	<section class="mt-10">
