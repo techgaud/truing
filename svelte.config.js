@@ -1,4 +1,7 @@
-import adapter from '@sveltejs/adapter-cloudflare';
+import adapterCloudflare from '@sveltejs/adapter-cloudflare';
+import adapterStatic from '@sveltejs/adapter-static';
+
+const isCapacitor = process.env.ADAPTER === 'static';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -7,7 +10,7 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: adapter()
+		adapter: isCapacitor ? adapterStatic({ fallback: 'index.html' }) : adapterCloudflare()
 	}
 };
 

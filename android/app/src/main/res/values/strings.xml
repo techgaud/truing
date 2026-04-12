@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Truing</string>
+    <string name="title_activity_main">Truing</string>
+    <string name="package_name">app.truing</string>
+    <string name="custom_url_scheme">app.truing</string>
+</resources>
