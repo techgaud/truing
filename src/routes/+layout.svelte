@@ -12,11 +12,31 @@
 	import { checkStorage, requestPersist } from '$lib/storage';
 	import { handleShortcutKeyDown, loadShortcutMode } from '$lib/shortcuts';
 	import { loadUnitPreference } from '$lib/units';
+	import { isCapacitorNative } from '$lib/platform';
+	import { runNotificationCheck } from '$lib/notifications';
+	import { db } from '$lib/db';
 
 	if (browser) {
 		installGlobalHandlers();
 		loadShortcutMode();
 		loadUnitPreference();
+	}
+
+	async function checkNotificationsOnResume() {
+		if (!isCapacitorNative()) return;
+		const last = await db.settings.get('_last_notification_check_at');
+		const lastTime = last?.value ? Date.parse(last.value as string) : 0;
+		if (Date.now() - lastTime > 86_400_000) {
+			runNotificationCheck();
+		}
+	}
+
+	if (browser && isCapacitorNative()) {
+		import('@capacitor/app').then(({ App }) => {
+			App.addListener('resume', () => {
+				checkNotificationsOnResume();
+			});
+		});
 	}
 
 	let evicted = $state(false);

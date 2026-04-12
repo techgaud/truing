@@ -13,6 +13,7 @@
 		loadCustomTypes
 	} from '$lib/intervals';
 	import { formatDistance, metersToDisplayUnit, distanceLabel } from '$lib/units';
+	import { runNotificationCheck } from '$lib/notifications';
 	const URGENT_CAP = 10;
 	const DUE_SOON_FRACTION = 0.9;
 	const DUE_SOON_DAYS = 14;
@@ -164,6 +165,14 @@
 	const urgentCount = $derived(
 		filtered ? filtered.overdue.length + filtered.dueSoon.length + filtered.inspection.length : 0
 	);
+
+	let notificationCheckDone = false;
+	$effect(() => {
+		if ($data && $data.status === 'ok' && !notificationCheckDone) {
+			notificationCheckDone = true;
+			runNotificationCheck();
+		}
+	});
 
 	function wearText(row: Row): string {
 		const useDistance =

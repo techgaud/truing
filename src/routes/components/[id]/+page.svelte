@@ -4,6 +4,7 @@
 	import { liveQuery } from 'dexie';
 	import { db, type Bike, type Component, type Installation, type ServiceAction } from '$lib/db';
 	import { componentWear } from '$lib/wear';
+	import { clearNotifiedThresholds } from '$lib/notifications';
 	import {
 		replacementDistanceMeters,
 		replacementTimeDays,
@@ -147,6 +148,9 @@
 				created_at: now,
 				updated_at: now
 			});
+			if (serviceAction === 'serviced') {
+				await clearNotifiedThresholds(componentId);
+			}
 			showServiceModal = false;
 		} catch (err) {
 			serviceError = err instanceof Error ? err.message : String(err);

@@ -33,6 +33,8 @@ export interface Component {
 	wear_multipliers_override?: Record<string, number> | null;
 	purchase_price_cents?: number | null;
 	purchase_currency?: string | null;
+	notification_threshold_pct?: number | null;
+	notified_thresholds?: number[];
 	notes?: string;
 	created_at: string;
 	updated_at: string;
