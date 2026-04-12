@@ -44,6 +44,8 @@
 	},
 	"dependencies": {
 		"dexie": "^4.4.2",
+		"fit-file-parser": "^2.3.3",
+		"gpxparser": "^3.0.8",
 		"lucide-svelte": "^1.0.1"
 	}
 }

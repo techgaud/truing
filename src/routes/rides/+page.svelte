@@ -2,6 +2,7 @@
 	import { liveQuery } from 'dexie';
 	import { resolve } from '$app/paths';
 	import { db, type Bike, type Ride } from '$lib/db';
+	import { parseFile } from '$lib/import/parse';
 
 	const METERS_PER_MILE = 1609.344;
 	const SWIPE_THRESHOLD = 80;
@@ -112,6 +113,72 @@
 			alert(`Undo failed. ${err instanceof Error ? err.message : String(err)}`);
 		}
 	}
+
+	let importStatus = $state('');
+
+	async function handleFileImport() {
+		const activeBikes = await db.bikes.filter((b) => !b.archived_at).toArray();
+		if (activeBikes.length === 0) {
+			alert('Add a bike first, then import rides.');
+			return;
+		}
+
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.gpx,.fit';
+		input.multiple = true;
+		input.onchange = async () => {
+			const files = input.files;
+			if (!files || files.length === 0) return;
+			importStatus = `Importing ${files.length} file${files.length > 1 ? 's' : ''}…`;
+			let imported = 0;
+			let failed = 0;
+			for (const file of files) {
+				try {
+					const parsed = await parseFile(file);
+					const existing = parsed.external_id
+						? await db.rides.where({ external_id: parsed.external_id }).first()
+						: undefined;
+					if (existing) continue;
+
+					const bikeId =
+						activeBikes.length === 1 ? activeBikes[0].id! : await pickBike(activeBikes, file.name);
+					if (bikeId === null) continue;
+
+					const now = new Date().toISOString();
+					const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+					await db.rides.add({
+						bike_id: bikeId,
+						started_at: parsed.started_at,
+						started_at_tz: tz,
+						distance_meters: parsed.distance_meters,
+						duration_seconds: parsed.duration_seconds,
+						elevation_gain_meters: parsed.elevation_gain_meters ?? null,
+						conditions: [],
+						source: parsed.source,
+						external_id: parsed.external_id,
+						created_at: now,
+						updated_at: now
+					});
+					imported++;
+				} catch {
+					failed++;
+				}
+			}
+			importStatus = `Imported ${imported} ride${imported !== 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}.`;
+			setTimeout(() => (importStatus = ''), 5000);
+		};
+		input.click();
+	}
+
+	function pickBike(bikes: Bike[], fileName: string): Promise<number | null> {
+		const names = bikes.map((b, i) => `${i + 1}. ${b.name}`).join('\n');
+		const choice = prompt(`Which bike for ${fileName}?\n\n${names}\n\nEnter the number.`);
+		if (!choice) return Promise.resolve(null);
+		const idx = parseInt(choice, 10) - 1;
+		if (idx >= 0 && idx < bikes.length) return Promise.resolve(bikes[idx].id!);
+		return Promise.resolve(null);
+	}
 </script>
 
 <svelte:head>
@@ -122,24 +189,46 @@
 	<header class="flex items-center justify-between">
 		<h1 class="text-2xl font-semibold">Rides</h1>
 		{#if $rows && $rows.length > 0}
-			<a
-				href={resolve('/rides/new')}
-				class="rounded-button bg-accent px-4 py-2 text-sm font-medium text-accent-fg"
-			>
-				Add a ride
-			</a>
+			<div class="flex gap-2">
+				<button
+					type="button"
+					onclick={handleFileImport}
+					class="rounded-button border border-border px-4 py-2 text-sm font-medium"
+				>
+					Import
+				</button>
+				<a
+					href={resolve('/rides/new')}
+					class="rounded-button bg-accent px-4 py-2 text-sm font-medium text-accent-fg"
+				>
+					Add a ride
+				</a>
+			</div>
 		{/if}
 	</header>
+
+	{#if importStatus}
+		<p class="mt-4 text-sm text-fg-muted" aria-live="polite">{importStatus}</p>
+	{/if}
 
 	{#if $rows?.length === 0}
 		<div class="mt-12 flex flex-col items-center text-center">
 			<p class="text-fg-muted">No rides yet.</p>
-			<a
-				href={resolve('/rides/new')}
-				class="mt-6 rounded-button bg-accent px-5 py-3 font-medium text-accent-fg"
-			>
-				Add a ride
-			</a>
+			<div class="mt-6 flex flex-col gap-3">
+				<a
+					href={resolve('/rides/new')}
+					class="rounded-button bg-accent px-5 py-3 font-medium text-accent-fg"
+				>
+					Add a ride
+				</a>
+				<button
+					type="button"
+					onclick={handleFileImport}
+					class="rounded-button border border-border px-5 py-3 font-medium"
+				>
+					Import GPX or FIT file
+				</button>
+			</div>
 		</div>
 	{:else if $rows}
 		<ul class="mt-6 space-y-2">
