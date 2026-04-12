@@ -165,3 +165,23 @@ export async function getPremigrationBackup(): Promise<{
 export async function clearPremigrationBackup(): Promise<void> {
 	await deleteDatabase(BACKUP_DB);
 }
+
+export async function verifyPostMigration(): Promise<boolean> {
+	try {
+		const { db } = await import('./db');
+		await Promise.all([
+			db.bikes.count(),
+			db.components.count(),
+			db.installations.count(),
+			db.rides.count(),
+			db.service_log.count(),
+			db.custom_component_types.count(),
+			db.settings.count(),
+			db.strava_auth.count(),
+			db.error_log.count()
+		]);
+		return true;
+	} catch {
+		return false;
+	}
+}

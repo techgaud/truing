@@ -14,7 +14,8 @@
 	import { loadUnitPreference } from '$lib/units';
 	import { isCapacitorNative } from '$lib/platform';
 	import { runNotificationCheck } from '$lib/notifications';
-	import { ensurePremigrationBackup } from '$lib/premigration';
+	import { ensurePremigrationBackup, verifyPostMigration } from '$lib/premigration';
+	import MigrationFailedModal from '$lib/components/MigrationFailedModal.svelte';
 	import { db } from '$lib/db';
 
 	if (browser) {
@@ -41,14 +42,23 @@
 	}
 
 	let evicted = $state(false);
+	let migrationFailed = $state(false);
 	let storageReady = $state(!browser);
 
 	if (browser) {
 		ensurePremigrationBackup()
 			.catch(() => {})
 			.then(() => checkStorage())
-			.then((result) => {
+			.then(async (result) => {
 				evicted = result === 'evicted';
+				if (!evicted) {
+					const ok = await verifyPostMigration();
+					if (!ok) {
+						migrationFailed = true;
+						storageReady = true;
+						return;
+					}
+				}
 				storageReady = true;
 				requestPersist();
 			});
@@ -61,7 +71,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{#if storageReady}
+{#if storageReady && !migrationFailed}
 	<div class="min-h-dvh pb-16 lg:pb-0 lg:pl-48">
 		{@render children()}
 	</div>
@@ -69,6 +79,15 @@
 
 {#if evicted}
 	<EvictionModal onresolved={() => (evicted = false)} />
+{/if}
+
+{#if migrationFailed}
+	<MigrationFailedModal
+		onresolved={() => {
+			migrationFailed = false;
+			requestPersist();
+		}}
+	/>
 {/if}
 
 <svelte:window onkeydown={handleShortcutKeyDown} />
