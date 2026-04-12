@@ -84,6 +84,24 @@ export function serviceSchedule(type: string): ServiceScheduleEntry[] {
 	return shipped[type]?.service_schedule ?? [];
 }
 
+const categoryLabels: Record<string, string> = {
+	drivetrain: 'Drivetrain',
+	brakes: 'Brakes',
+	cables: 'Cables',
+	wheels_tires: 'Wheels & Tires',
+	bearings: 'Bearings',
+	cockpit: 'Cockpit',
+	frame: 'Frame',
+	suspension: 'Suspension',
+	ebike: 'E-Bike'
+};
+
+export function formatCategory(category: string): string {
+	return (
+		categoryLabels[category] ?? category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+	);
+}
+
 export function componentTypeLabel(type: string): string {
 	const s = shipped[type];
 	if (s) return s.label;

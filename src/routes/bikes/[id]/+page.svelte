@@ -28,8 +28,10 @@
 		parseDistanceToMeters,
 		distanceLabel
 	} from '$lib/units';
+	import { formatCategory } from '$lib/intervals';
 	import { exportBikeAsPack } from '$lib/packs';
 	import ActionMenu from '$lib/components/ActionMenu.svelte';
+	import Fab from '$lib/components/Fab.svelte';
 
 	const intervals = serviceIntervals as Record<string, ServiceInterval>;
 	const templates = templatesData as Record<string, Template>;
@@ -621,6 +623,10 @@
 	{/if}
 </main>
 
+{#if $bike && !$bike.archived_at}
+	<Fab onclick={openAddOneModal} />
+{/if}
+
 {#if showAddOne}
 	<div
 		class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12"
@@ -648,7 +654,7 @@
 						>
 							<option value="" disabled>Choose…</option>
 							{#each groupedIntervals as [category, items] (category)}
-								<optgroup label={category}>
+								<optgroup label={formatCategory(category)}>
 									{#each items as [key, entry] (key)}
 										<option value={key}>{entry.label}</option>
 									{/each}

@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { db, type Component } from '$lib/db';
 	import { componentTypeLabel } from '$lib/intervals';
+	import Fab from '$lib/components/Fab.svelte';
 
 	const allBikes = liveQuery(() => db.bikes.toArray());
 
@@ -146,6 +147,8 @@
 			{/each}
 		</ul>
 	{/if}
+
+	<Fab href={resolve('/bikes/new')} />
 
 	{#if $partsBin && $partsBin.length > 0}
 		<details class="mt-10">

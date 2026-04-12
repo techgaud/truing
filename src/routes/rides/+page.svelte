@@ -5,6 +5,7 @@
 	import { parseFile } from '$lib/import/parse';
 	import { syncStrava } from '$lib/strava';
 	import { haptic } from '$lib/haptics';
+	import Fab from '$lib/components/Fab.svelte';
 	import { formatDistance } from '$lib/units';
 	const SWIPE_THRESHOLD = 80;
 	const SWIPE_MAX = 120;
@@ -309,6 +310,8 @@
 		</ul>
 	{/if}
 </main>
+
+<Fab href={resolve('/rides/new')} />
 
 {#if pendingDelete}
 	<div

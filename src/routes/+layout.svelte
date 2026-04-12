@@ -1,9 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { resolve } from '$app/paths';
 	import { browser } from '$app/environment';
-	import Settings from 'lucide-svelte/icons/settings';
 	import HelpOverlay from '$lib/components/HelpOverlay.svelte';
 	import BottomNav from '$lib/components/BottomNav.svelte';
 	import EvictionModal from '$lib/components/EvictionModal.svelte';
@@ -47,14 +45,6 @@
 {#if evicted}
 	<EvictionModal onresolved={() => (evicted = false)} />
 {/if}
-
-<a
-	href={resolve('/settings')}
-	aria-label="Settings"
-	class="fixed top-4 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-elevated"
->
-	<Settings size={18} />
-</a>
 
 <svelte:window onkeydown={handleShortcutKeyDown} />
 

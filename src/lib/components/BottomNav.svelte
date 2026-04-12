@@ -5,11 +5,17 @@
 	import LayoutDashboard from 'lucide-svelte/icons/layout-dashboard';
 	import Bike from 'lucide-svelte/icons/bike';
 	import Route from 'lucide-svelte/icons/route';
+	import Menu from 'lucide-svelte/icons/menu';
 
 	function isActive(path: string): boolean {
 		const current = page.url.pathname;
 		if (path === '/') return current === '/';
 		return current === path || current.startsWith(`${path}/`);
+	}
+
+	function isMoreActive(): boolean {
+		const current = page.url.pathname;
+		return current === '/more' || current.startsWith('/settings') || current === '/parts-bin';
 	}
 </script>
 
@@ -53,4 +59,16 @@
 		<Route size={20} />
 		Rides
 	</a>
+	<!-- eslint-disable svelte/no-navigation-without-resolve -->
+	<a
+		href="/more"
+		onclick={() => haptic.selection()}
+		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isMoreActive()
+			? 'font-semibold text-accent'
+			: 'text-fg-muted'}"
+	>
+		<Menu size={20} />
+		More
+	</a>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 </nav>

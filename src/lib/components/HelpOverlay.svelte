@@ -1,12 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import CircleHelp from 'lucide-svelte/icons/circle-help';
 	import X from 'lucide-svelte/icons/x';
 	import { getHelpContent } from '$lib/help/content';
-
-	let open = $state(false);
-	let panel = $state<HTMLElement | null>(null);
-	let trigger = $state<HTMLButtonElement | null>(null);
+	import { helpOpen } from '$lib/help/state';
 
 	const content = $derived(getHelpContent(page.url.pathname));
 
@@ -17,20 +13,18 @@
 	}
 
 	function openHelp() {
-		open = true;
-		queueMicrotask(() => panel?.focus());
+		helpOpen.set(true);
 	}
 
 	function closeHelp() {
-		open = false;
-		trigger?.focus();
+		helpOpen.set(false);
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === '?' && !open && !isInTextInput(e.target)) {
+		if (e.key === '?' && !$helpOpen && !isInTextInput(e.target)) {
 			e.preventDefault();
 			openHelp();
-		} else if (e.key === 'Escape' && open) {
+		} else if (e.key === 'Escape' && $helpOpen) {
 			e.preventDefault();
 			closeHelp();
 		}
@@ -39,17 +33,7 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<button
-	type="button"
-	bind:this={trigger}
-	onclick={openHelp}
-	aria-label="Help"
-	class="fixed top-4 right-16 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-elevated"
->
-	<CircleHelp size={18} />
-</button>
-
-{#if open && content}
+{#if $helpOpen && content}
 	<button
 		type="button"
 		aria-label="Close help"
@@ -58,7 +42,6 @@
 	></button>
 
 	<div
-		bind:this={panel}
 		role="dialog"
 		aria-modal="false"
 		aria-labelledby="help-title"
@@ -66,7 +49,7 @@
 		class="fixed right-0 bottom-0 left-0 z-50 max-h-[85dvh] overflow-y-auto border-t border-border bg-surface-elevated p-6 sm:top-0 sm:right-0 sm:bottom-0 sm:left-auto sm:w-96 sm:max-w-full sm:border-t-0 sm:border-l"
 	>
 		<div class="flex items-start justify-between gap-3">
-			<h2 id="help-title" class="text-lg font-semibold">Help. {content.title}</h2>
+			<h2 id="help-title" class="text-lg font-semibold">Help: {content.title}</h2>
 			<button type="button" onclick={closeHelp} aria-label="Close" class="text-fg-muted">
 				<X size={20} />
 			</button>

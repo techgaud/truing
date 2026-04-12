@@ -18,11 +18,12 @@ const staticRoutes: Record<string, HelpContent> = {
 		description: 'Every bike you have added.',
 		actions: [
 			'Tap a bike to see its components and available actions.',
-			'Tap "Add a bike" to create a new one.'
+			'Tap "Add a bike" to create a new one.',
+			'Expand "Parts bin" at the bottom to see uninstalled components.'
 		]
 	},
 	'/bikes/new': {
-		title: 'Add a bike',
+		title: 'Add a Bike',
 		description: 'Name and type are required. Everything else is optional.',
 		actions: [
 			'Expand "More details" to fill in make, model, year, purchase info, and a starting odometer value.',
@@ -40,11 +41,28 @@ const staticRoutes: Record<string, HelpContent> = {
 		]
 	},
 	'/rides/new': {
-		title: 'Add a ride',
+		title: 'Add a Ride',
 		description: 'Bike, distance, and date are required.',
 		actions: [
 			'Expand "More details" to record duration, elevation gain, and notes.',
 			'Submit to land back on the rides list.'
+		]
+	},
+	'/more': {
+		title: 'More',
+		description: 'Settings, help, and data management.',
+		actions: [
+			'Press ? on any screen for help specific to that screen.',
+			'Settings has unit preferences, keyboard shortcuts, Strava, data packs, backup, and storage info.'
+		]
+	},
+	'/parts-bin': {
+		title: 'Parts Bin',
+		description: 'Components that are uninstalled but not retired.',
+		actions: [
+			'Tap "Install" to put a component on a bike.',
+			'Tap "Retire" to mark a component as done permanently.',
+			'Tap the component name to see its full history.'
 		]
 	}
 };
@@ -53,13 +71,13 @@ const dynamicRoutes: Array<[RegExp, HelpContent]> = [
 	[
 		/^\/bikes\/\d+$/,
 		{
-			title: 'Bike detail',
+			title: 'Bike Detail',
 			description: 'One bike, its components, and the actions you can take.',
 			actions: [
-				'If the bike has no components yet, tap "Load typical list" to bulk add a template of common parts.',
-				'"Add one component" opens a form for a single entry.',
-				'Each component row has inline Edit and Delete buttons.',
-				'"Archive this bike" hides it from the dashboard while keeping its history.'
+				'Tap "Load typical list" to bulk add a template of common components.',
+				'Tap the + button to add a single component.',
+				'Each component row has inline Edit, Uninstall, and Delete actions.',
+				'Use the three-dot menu for Export and Archive options.'
 			]
 		}
 	]
