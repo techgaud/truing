@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { db } from '$lib/db';
-	import { encryptField } from '$lib/crypto';
+	import { encryptField, decryptField, hasSessionKey } from '$lib/crypto';
 
 	let status = $state('Connecting to Strava…');
 	let failed = $state(false);
@@ -24,7 +24,13 @@
 		}
 
 		try {
-			const clientSecret = new TextDecoder().decode(auth.client_secret);
+			if (!hasSessionKey()) {
+				status =
+					'Encryption key not loaded. Open Settings and enter your passphrase, then try connecting again.';
+				failed = true;
+				return;
+			}
+			const clientSecret = await decryptField(auth.client_secret);
 			const body = new URLSearchParams({
 				client_id: auth.client_id,
 				client_secret: clientSecret,

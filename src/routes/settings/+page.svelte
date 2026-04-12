@@ -2,7 +2,7 @@
 	import { liveQuery } from 'dexie';
 	import { exportAll, importAll } from '$lib/backup';
 	import { db } from '$lib/db';
-	import { encryptField } from '$lib/crypto';
+	import { encryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
 
 	let importing = $state(false);
 	let exportStatus = $state('');
@@ -54,12 +54,30 @@
 	let stravaClientSecret = $state('');
 	let stravaSaving = $state(false);
 	let stravaStatus = $state('');
+	let passphrase = $state('');
+	let keyUnlocked = $state(hasSessionKey());
 
 	const stravaConnected = $derived(
 		$stravaAuth?.access_token != null && $stravaAuth.access_token.length > 0
 	);
 
+	async function handleUnlock() {
+		if (!passphrase) return;
+		try {
+			await unlockWithPassphrase(passphrase);
+			keyUnlocked = true;
+			passphrase = '';
+			stravaStatus = 'Unlocked.';
+		} catch (err) {
+			stravaStatus = `Unlock failed. ${err instanceof Error ? err.message : String(err)}`;
+		}
+	}
+
 	async function handleStravaSave() {
+		if (!keyUnlocked) {
+			stravaStatus = 'Unlock with your passphrase first.';
+			return;
+		}
 		if (!stravaClientId.trim() || !stravaClientSecret.trim()) {
 			stravaStatus = 'Both fields are required.';
 			return;
@@ -161,6 +179,30 @@
 					<li>Save, then click Connect</li>
 				</ol>
 			</details>
+			{#if !keyUnlocked}
+				<div class="mt-4 rounded-card border border-border bg-surface-elevated p-4">
+					<p class="text-sm text-fg-muted">
+						Enter a passphrase to encrypt your Strava credentials. You will need this passphrase
+						each time you open Truing in a new tab.
+					</p>
+					<div class="mt-3 flex gap-2">
+						<input
+							type="password"
+							bind:value={passphrase}
+							placeholder="Passphrase"
+							class="flex-1 rounded-button border border-border bg-surface px-3 py-2 text-sm"
+						/>
+						<button
+							type="button"
+							onclick={handleUnlock}
+							class="rounded-button bg-accent px-4 py-2 text-sm font-medium text-accent-fg"
+						>
+							Unlock
+						</button>
+					</div>
+				</div>
+			{/if}
+
 			<div class="mt-4 space-y-4">
 				<div>
 					<label for="strava-client-id" class="block text-sm font-medium">Client ID</label>
