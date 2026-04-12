@@ -156,14 +156,10 @@
 							Delete
 						</button>
 						<div
-							role="button"
-							tabindex="0"
-							aria-label="Ride row. Press Delete or Backspace to remove."
 							onpointerdown={(e) => handlePointerDown(e, rideId)}
 							onpointermove={(e) => handlePointerMove(e, rideId)}
 							onpointerup={(e) => handlePointerUp(e, rideId)}
 							onpointercancel={(e) => handlePointerUp(e, rideId)}
-							onkeydown={(e) => handleRowKeydown(e, row)}
 							class="relative touch-pan-y rounded-card border border-border bg-surface-elevated px-4 py-3 select-none {draggingRideId ===
 							rideId
 								? ''
@@ -171,12 +167,16 @@
 							style="transform: translateX({transformFor(rideId)}px);"
 						>
 							<div class="flex items-start justify-between gap-3">
-								<div class="min-w-0">
+								<a
+									href={resolve('/rides/[id]', { id: String(rideId) })}
+									onkeydown={(e) => handleRowKeydown(e, row)}
+									class="min-w-0 flex-1"
+								>
 									<p class="font-medium">{formatDistance(row.ride.distance_meters)}</p>
 									<p class="text-sm text-fg-muted">
 										{row.bike?.name ?? 'Unknown bike'} · {formatDate(row.ride.started_at)}
 									</p>
-								</div>
+								</a>
 								<span
 									class="shrink-0 rounded-button border border-border px-2 py-0.5 text-xs text-fg-muted capitalize"
 								>
