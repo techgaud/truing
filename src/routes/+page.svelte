@@ -265,6 +265,7 @@
 			>
 				Add your first bike
 			</a>
+			<a href={resolve('/onboarding')} class="mt-4 text-sm text-fg-muted">Learn more</a>
 		</div>
 	{:else if $data.status === 'no_components'}
 		<h1 class="text-2xl font-semibold">Dashboard</h1>
