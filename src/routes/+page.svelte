@@ -31,6 +31,7 @@
 
 	type Classified = {
 		status: 'ok';
+		bikes: Bike[];
 		overdue: Row[];
 		dueSoon: Row[];
 		inspection: Row[];
@@ -128,24 +129,39 @@
 			return bDays - aDays;
 		});
 
-		return { status: 'ok', overdue, dueSoon, inspection, healthy };
+		return { status: 'ok', bikes: activeBikes, overdue, dueSoon, inspection, healthy };
+	});
+
+	let selectedBikeId = $state<number | 'all'>('all');
+
+	function bikeFilter(row: Row): boolean {
+		return selectedBikeId === 'all' || row.bike.id === selectedBikeId;
+	}
+
+	const filtered = $derived.by(() => {
+		if (!$data || $data.status !== 'ok') return null;
+		return {
+			bikes: $data.bikes,
+			overdue: $data.overdue.filter(bikeFilter),
+			dueSoon: $data.dueSoon.filter(bikeFilter),
+			inspection: $data.inspection.filter(bikeFilter),
+			healthy: $data.healthy.filter(bikeFilter)
+		};
 	});
 
 	const statusText = $derived.by(() => {
-		if (!$data || $data.status !== 'ok') return '';
-		const urgent = $data.overdue.length + $data.dueSoon.length + $data.inspection.length;
+		if (!filtered) return '';
+		const urgent = filtered.overdue.length + filtered.dueSoon.length + filtered.inspection.length;
 		if (urgent === 0) return 'All good. Nothing needs attention.';
 		const parts: string[] = [];
-		if ($data.overdue.length) parts.push(`${$data.overdue.length} overdue`);
-		if ($data.dueSoon.length) parts.push(`${$data.dueSoon.length} due soon`);
-		if ($data.inspection.length) parts.push(`${$data.inspection.length} to inspect`);
+		if (filtered.overdue.length) parts.push(`${filtered.overdue.length} overdue`);
+		if (filtered.dueSoon.length) parts.push(`${filtered.dueSoon.length} due soon`);
+		if (filtered.inspection.length) parts.push(`${filtered.inspection.length} to inspect`);
 		return parts.join(' · ');
 	});
 
-	const urgentCount = $derived.by(() =>
-		$data && $data.status === 'ok'
-			? $data.overdue.length + $data.dueSoon.length + $data.inspection.length
-			: 0
+	const urgentCount = $derived(
+		filtered ? filtered.overdue.length + filtered.dueSoon.length + filtered.inspection.length : 0
 	);
 
 	function wearText(row: Row): string {
@@ -193,16 +209,28 @@
 		>
 			Go to bikes
 		</a>
-	{:else}
+	{:else if filtered}
 		<section class="rounded-card border border-border bg-surface-elevated p-5">
+			{#if filtered.bikes.length >= 2}
+				<select
+					bind:value={selectedBikeId}
+					aria-label="Filter by bike"
+					class="mb-3 rounded-button border border-border bg-surface px-3 py-1.5 text-sm"
+				>
+					<option value="all">All bikes</option>
+					{#each filtered.bikes as bike (bike.id)}
+						<option value={bike.id}>{bike.name}</option>
+					{/each}
+				</select>
+			{/if}
 			<h1 class="text-2xl font-semibold">{statusText}</h1>
 		</section>
 
-		{#if $data.overdue.length > 0}
+		{#if filtered.overdue.length > 0}
 			<section class="mt-6">
 				<h2 class="text-xs font-semibold uppercase tracking-wide text-danger">Overdue</h2>
 				<ul class="mt-2 space-y-2">
-					{#each $data.overdue.slice(0, URGENT_CAP) as row (row.installation.id)}
+					{#each filtered.overdue.slice(0, URGENT_CAP) as row (row.installation.id)}
 						<li class="rounded-card border border-border bg-surface-elevated">
 							<a
 								href={resolve('/components/[id]', { id: String(row.component.id!) })}
@@ -230,11 +258,11 @@
 			</section>
 		{/if}
 
-		{#if $data.dueSoon.length > 0}
+		{#if filtered.dueSoon.length > 0}
 			<section class="mt-6">
 				<h2 class="text-xs font-semibold uppercase tracking-wide text-warning">Due soon</h2>
 				<ul class="mt-2 space-y-2">
-					{#each $data.dueSoon.slice(0, URGENT_CAP - $data.overdue.length) as row (row.installation.id)}
+					{#each filtered.dueSoon.slice(0, URGENT_CAP - filtered.overdue.length) as row (row.installation.id)}
 						<li class="rounded-card border border-border bg-surface-elevated">
 							<a
 								href={resolve('/components/[id]', { id: String(row.component.id!) })}
@@ -262,11 +290,11 @@
 			</section>
 		{/if}
 
-		{#if $data.inspection.length > 0}
+		{#if filtered.inspection.length > 0}
 			<section class="mt-6">
 				<h2 class="text-xs font-semibold uppercase tracking-wide text-info">Needs inspection</h2>
 				<ul class="mt-2 space-y-2">
-					{#each $data.inspection.slice(0, URGENT_CAP - $data.overdue.length - $data.dueSoon.length) as row (row.installation.id)}
+					{#each filtered.inspection.slice(0, URGENT_CAP - filtered.overdue.length - filtered.dueSoon.length) as row (row.installation.id)}
 						<li class="rounded-card border border-border bg-surface-elevated">
 							<a
 								href={resolve('/components/[id]', { id: String(row.component.id!) })}
@@ -294,14 +322,14 @@
 			</a>
 		{/if}
 
-		{#if $data.healthy.length > 0}
+		{#if filtered.healthy.length > 0}
 			<details class="mt-8">
 				<summary class="cursor-pointer text-sm text-fg-muted">
-					{$data.healthy.length}
-					{$data.healthy.length === 1 ? 'healthy component' : 'healthy components'}
+					{filtered.healthy.length}
+					{filtered.healthy.length === 1 ? 'healthy component' : 'healthy components'}
 				</summary>
 				<ul class="mt-2 space-y-2">
-					{#each $data.healthy as row (row.installation.id)}
+					{#each filtered.healthy as row (row.installation.id)}
 						<li class="rounded-card border border-border bg-surface-elevated">
 							<a
 								href={resolve('/components/[id]', { id: String(row.component.id!) })}
