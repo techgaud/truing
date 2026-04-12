@@ -180,6 +180,72 @@
 		}
 		return '';
 	}
+
+	type ActivityItem = {
+		kind: 'ride' | 'service';
+		timestamp: string;
+		label: string;
+		bikeName: string;
+		href: string | null;
+	};
+
+	const recentActivity = liveQuery<ActivityItem[]>(async () => {
+		const rides = await db.rides.orderBy('started_at').reverse().limit(5).toArray();
+		const serviceEntries = await db.service_log
+			.orderBy('performed_at')
+			.reverse()
+			.limit(5)
+			.toArray();
+
+		const allBikeIds = [
+			...new Set([...rides.map((r) => r.bike_id), ...serviceEntries.map((s) => s.bike_id)])
+		];
+		const bikes = await db.bikes.bulkGet(allBikeIds);
+		const bikeById: Record<number, Bike> = {};
+		for (const b of bikes) if (b?.id !== undefined) bikeById[b.id] = b;
+
+		const componentIds = [...new Set(serviceEntries.map((s) => s.component_id))];
+		const comps = await db.components.bulkGet(componentIds);
+		const compById: Record<number, Component> = {};
+		for (const c of comps) if (c?.id !== undefined) compById[c.id] = c;
+
+		const items: ActivityItem[] = [];
+		for (const ride of rides) {
+			const mi = (ride.distance_meters / METERS_PER_MILE).toFixed(1);
+			items.push({
+				kind: 'ride',
+				timestamp: ride.started_at,
+				label: `${mi} mi ride`,
+				bikeName: bikeById[ride.bike_id]?.name ?? 'Unknown bike',
+				href: null
+			});
+		}
+		for (const entry of serviceEntries) {
+			const compName =
+				compById[entry.component_id]?.name ?? compById[entry.component_id]?.type ?? 'Component';
+			items.push({
+				kind: 'service',
+				timestamp: entry.performed_at,
+				label: `${entry.action} ${compName}`,
+				bikeName: bikeById[entry.bike_id]?.name ?? '',
+				href: null
+			});
+		}
+		items.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+		return items.slice(0, 5);
+	});
+
+	function relativeTime(iso: string): string {
+		const ms = Date.now() - Date.parse(iso);
+		const mins = Math.floor(ms / 60_000);
+		if (mins < 60) return `${mins}m ago`;
+		const hrs = Math.floor(mins / 60);
+		if (hrs < 24) return `${hrs}h ago`;
+		const days = Math.floor(hrs / 24);
+		if (days < 7) return `${days}d ago`;
+		const weeks = Math.floor(days / 7);
+		return `${weeks}w ago`;
+	}
 </script>
 
 <svelte:head>
@@ -351,6 +417,25 @@
 					{/each}
 				</ul>
 			</details>
+		{/if}
+
+		{#if $recentActivity && $recentActivity.length > 0}
+			<section class="mt-10">
+				<h2 class="text-xs font-semibold tracking-wide text-fg-muted uppercase">Recent activity</h2>
+				<ul class="mt-3 space-y-1">
+					{#each $recentActivity as item (item.timestamp + item.label)}
+						<li class="flex items-baseline justify-between gap-3 py-1 text-sm">
+							<p class="min-w-0 truncate">
+								{item.label}
+								{#if item.bikeName}
+									<span class="text-fg-muted"> · {item.bikeName}</span>
+								{/if}
+							</p>
+							<span class="shrink-0 text-fg-muted">{relativeTime(item.timestamp)}</span>
+						</li>
+					{/each}
+				</ul>
+			</section>
 		{/if}
 	{/if}
 </main>
