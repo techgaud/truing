@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { db, type Bike, type Ride } from '$lib/db';
 	import { parseFile } from '$lib/import/parse';
+	import { syncStrava } from '$lib/strava';
 
 	const METERS_PER_MILE = 1609.344;
 	const SWIPE_THRESHOLD = 80;
@@ -115,6 +116,26 @@
 	}
 
 	let importStatus = $state('');
+	let syncing = $state(false);
+
+	const stravaAuth = liveQuery(() => db.strava_auth.get(1));
+	const stravaConnected = $derived(
+		$stravaAuth?.access_token != null && $stravaAuth.access_token.length > 0
+	);
+
+	async function handleStravaSync() {
+		syncing = true;
+		importStatus = '';
+		try {
+			const result = await syncStrava();
+			importStatus = `Strava sync done. ${result.imported} new rides, ${result.skipped} skipped.`;
+		} catch (err) {
+			importStatus = `Sync failed. ${err instanceof Error ? err.message : String(err)}`;
+		} finally {
+			syncing = false;
+			setTimeout(() => (importStatus = ''), 8000);
+		}
+	}
 
 	async function handleFileImport() {
 		const activeBikes = await db.bikes.filter((b) => !b.archived_at).toArray();
@@ -190,6 +211,16 @@
 		<h1 class="text-2xl font-semibold">Rides</h1>
 		{#if $rows && $rows.length > 0}
 			<div class="flex gap-2">
+				{#if stravaConnected}
+					<button
+						type="button"
+						onclick={handleStravaSync}
+						disabled={syncing}
+						class="rounded-button border border-border px-4 py-2 text-sm font-medium disabled:opacity-50"
+					>
+						{syncing ? 'Syncing…' : 'Sync Strava'}
+					</button>
+				{/if}
 				<button
 					type="button"
 					onclick={handleFileImport}
