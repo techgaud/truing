@@ -332,14 +332,17 @@
 							{@const installation = row.installation}
 							<li class="rounded-card border border-border bg-surface-elevated px-4 py-3">
 								<div class="flex items-start justify-between gap-3">
-									<div class="min-w-0">
+									<a
+										href={resolve('/components/[id]', { id: String(component.id!) })}
+										class="min-w-0 flex-1"
+									>
 										<p class="font-medium">
 											{component.name ?? intervals[component.type]?.label ?? component.type}
 										</p>
 										<p class="text-sm text-fg-muted">
 											{intervals[component.type]?.label ?? component.type}
 										</p>
-									</div>
+									</a>
 									<div class="flex shrink-0 gap-3">
 										<button
 											type="button"

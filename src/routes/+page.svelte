@@ -203,22 +203,27 @@
 				<h2 class="text-xs font-semibold uppercase tracking-wide text-danger">Overdue</h2>
 				<ul class="mt-2 space-y-2">
 					{#each $data.overdue.slice(0, URGENT_CAP) as row (row.installation.id)}
-						<li class="rounded-card border border-border bg-surface-elevated p-4">
-							<div class="flex items-start justify-between gap-3">
-								<div class="min-w-0">
-									<p class="font-medium">{componentLabel(row.component)}</p>
-									<p class="text-sm text-fg-muted">
-										{componentTypeLabel(row.component.type)} · {row.bike.name}
-									</p>
+						<li class="rounded-card border border-border bg-surface-elevated">
+							<a
+								href={resolve('/components/[id]', { id: String(row.component.id!) })}
+								class="block p-4"
+							>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="font-medium">{componentLabel(row.component)}</p>
+										<p class="text-sm text-fg-muted">
+											{componentTypeLabel(row.component.type)} · {row.bike.name}
+										</p>
+									</div>
+									<p class="shrink-0 text-right text-sm text-danger">{wearText(row)}</p>
 								</div>
-								<p class="shrink-0 text-right text-sm text-danger">{wearText(row)}</p>
-							</div>
-							<div class="mt-3 h-2 overflow-hidden rounded-full bg-border">
-								<div
-									class="h-full bg-danger"
-									style="width: {Math.min(100, row.urgencyFraction * 100)}%"
-								></div>
-							</div>
+								<div class="mt-3 h-2 overflow-hidden rounded-full bg-border">
+									<div
+										class="h-full bg-danger"
+										style="width: {Math.min(100, row.urgencyFraction * 100)}%"
+									></div>
+								</div>
+							</a>
 						</li>
 					{/each}
 				</ul>
@@ -230,22 +235,27 @@
 				<h2 class="text-xs font-semibold uppercase tracking-wide text-warning">Due soon</h2>
 				<ul class="mt-2 space-y-2">
 					{#each $data.dueSoon.slice(0, URGENT_CAP - $data.overdue.length) as row (row.installation.id)}
-						<li class="rounded-card border border-border bg-surface-elevated p-4">
-							<div class="flex items-start justify-between gap-3">
-								<div class="min-w-0">
-									<p class="font-medium">{componentLabel(row.component)}</p>
-									<p class="text-sm text-fg-muted">
-										{componentTypeLabel(row.component.type)} · {row.bike.name}
-									</p>
+						<li class="rounded-card border border-border bg-surface-elevated">
+							<a
+								href={resolve('/components/[id]', { id: String(row.component.id!) })}
+								class="block p-4"
+							>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="font-medium">{componentLabel(row.component)}</p>
+										<p class="text-sm text-fg-muted">
+											{componentTypeLabel(row.component.type)} · {row.bike.name}
+										</p>
+									</div>
+									<p class="shrink-0 text-right text-sm text-warning">{wearText(row)}</p>
 								</div>
-								<p class="shrink-0 text-right text-sm text-warning">{wearText(row)}</p>
-							</div>
-							<div class="mt-3 h-2 overflow-hidden rounded-full bg-border">
-								<div
-									class="h-full bg-warning"
-									style="width: {Math.min(100, row.urgencyFraction * 100)}%"
-								></div>
-							</div>
+								<div class="mt-3 h-2 overflow-hidden rounded-full bg-border">
+									<div
+										class="h-full bg-warning"
+										style="width: {Math.min(100, row.urgencyFraction * 100)}%"
+									></div>
+								</div>
+							</a>
 						</li>
 					{/each}
 				</ul>
@@ -257,16 +267,21 @@
 				<h2 class="text-xs font-semibold uppercase tracking-wide text-info">Needs inspection</h2>
 				<ul class="mt-2 space-y-2">
 					{#each $data.inspection.slice(0, URGENT_CAP - $data.overdue.length - $data.dueSoon.length) as row (row.installation.id)}
-						<li class="rounded-card border border-border bg-surface-elevated p-4">
-							<div class="flex items-start justify-between gap-3">
-								<div class="min-w-0">
-									<p class="font-medium">{componentLabel(row.component)}</p>
-									<p class="text-sm text-fg-muted">
-										{componentTypeLabel(row.component.type)} · {row.bike.name}
-									</p>
+						<li class="rounded-card border border-border bg-surface-elevated">
+							<a
+								href={resolve('/components/[id]', { id: String(row.component.id!) })}
+								class="block p-4"
+							>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="font-medium">{componentLabel(row.component)}</p>
+										<p class="text-sm text-fg-muted">
+											{componentTypeLabel(row.component.type)} · {row.bike.name}
+										</p>
+									</div>
+									<p class="shrink-0 text-right text-sm text-info">Time to inspect</p>
 								</div>
-								<p class="shrink-0 text-right text-sm text-info">Time to inspect</p>
-							</div>
+							</a>
 						</li>
 					{/each}
 				</ul>
@@ -287,18 +302,23 @@
 				</summary>
 				<ul class="mt-2 space-y-2">
 					{#each $data.healthy as row (row.installation.id)}
-						<li class="rounded-card border border-border bg-surface-elevated p-4">
-							<div class="flex items-start justify-between gap-3">
-								<div class="min-w-0">
-									<p class="font-medium">{componentLabel(row.component)}</p>
-									<p class="text-sm text-fg-muted">
-										{componentTypeLabel(row.component.type)} · {row.bike.name}
+						<li class="rounded-card border border-border bg-surface-elevated">
+							<a
+								href={resolve('/components/[id]', { id: String(row.component.id!) })}
+								class="block p-4"
+							>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="font-medium">{componentLabel(row.component)}</p>
+										<p class="text-sm text-fg-muted">
+											{componentTypeLabel(row.component.type)} · {row.bike.name}
+										</p>
+									</div>
+									<p class="shrink-0 text-right text-sm text-fg-muted">
+										{Math.round(row.urgencyFraction * 100)}% used
 									</p>
 								</div>
-								<p class="shrink-0 text-right text-sm text-fg-muted">
-									{Math.round(row.urgencyFraction * 100)}% used
-								</p>
-							</div>
+							</a>
 						</li>
 					{/each}
 				</ul>
