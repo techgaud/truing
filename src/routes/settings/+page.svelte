@@ -334,6 +334,21 @@
 	</section>
 
 	<section class="mt-10">
+		<h2 class="text-lg font-semibold">Components</h2>
+		<p class="mt-2 text-sm text-fg-muted">
+			Add custom component types for parts not covered by the shipped defaults.
+		</p>
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
+		<a
+			href="/settings/custom-types"
+			class="mt-3 inline-block rounded-button border border-border px-5 py-2 text-sm font-medium"
+		>
+			Manage custom types
+		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
+	</section>
+
+	<section class="mt-10">
 		<h2 class="text-lg font-semibold">Data</h2>
 		<p class="mt-2 text-sm text-fg-muted">
 			Export your data as a JSON file for backup. Import to restore from a previous backup.

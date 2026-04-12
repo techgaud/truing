@@ -9,7 +9,8 @@
 		inspectionDistanceMeters,
 		inspectionTimeDays,
 		componentLabel,
-		componentTypeLabel
+		componentTypeLabel,
+		loadCustomTypes
 	} from '$lib/intervals';
 
 	const METERS_PER_MILE = 1609.344;
@@ -41,6 +42,7 @@
 	type DashState = Classified | { status: 'no_bikes' } | { status: 'no_components' };
 
 	const data = liveQuery<DashState>(async () => {
+		await loadCustomTypes();
 		const allBikes = await db.bikes.toArray();
 		const activeBikes = allBikes.filter((b) => !b.archived_at && b.id !== undefined);
 		if (activeBikes.length === 0) return { status: 'no_bikes' };

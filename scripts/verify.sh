@@ -20,6 +20,7 @@ run_step() {
 
 > "$LOG"
 
+run_step "sync" pnpm exec svelte-kit sync
 run_step "prettier" pnpm exec prettier --write .
 run_step "lint" pnpm run lint
 run_step "check" pnpm run check
