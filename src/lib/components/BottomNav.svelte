@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import LayoutDashboard from 'lucide-svelte/icons/layout-dashboard';
+	import Bike from 'lucide-svelte/icons/bike';
+	import Route from 'lucide-svelte/icons/route';
 
 	function isActive(path: string): boolean {
 		const current = page.url.pathname;
@@ -15,30 +18,35 @@
 >
 	<a
 		href={resolve('/')}
-		class="flex flex-1 items-center justify-center px-4 py-3 text-sm lg:justify-start {isActive('/')
+		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isActive(
+			'/'
+		)
 			? 'font-semibold text-accent'
 			: 'text-fg-muted'}"
 	>
+		<LayoutDashboard size={20} />
 		Dashboard
 	</a>
 	<a
 		href={resolve('/bikes')}
-		class="flex flex-1 items-center justify-center px-4 py-3 text-sm lg:justify-start {isActive(
+		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isActive(
 			'/bikes'
 		)
 			? 'font-semibold text-accent'
 			: 'text-fg-muted'}"
 	>
+		<Bike size={20} />
 		Bikes
 	</a>
 	<a
 		href={resolve('/rides')}
-		class="flex flex-1 items-center justify-center px-4 py-3 text-sm lg:justify-start {isActive(
+		class="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 text-xs lg:flex-row lg:justify-start lg:gap-3 lg:text-sm {isActive(
 			'/rides'
 		)
 			? 'font-semibold text-accent'
 			: 'text-fg-muted'}"
 	>
+		<Route size={20} />
 		Rides
 	</a>
 </nav>

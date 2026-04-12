@@ -2,7 +2,6 @@
 
 Things that are deferred until a prerequisite lands or a follow up commit picks them up.
 
-- Install Lucide icons. Blocker for dashboard status icons, help icon, and settings gear.
 - Build the `/components/[id]` route. Blocker for tap through from dashboard action items and bike detail component rows.
 - Add the bike filter dropdown to the dashboard. Low priority until multi bike dogfooding.
 - Build Zone 3 recent activity on the dashboard. Needs rides and service log data.

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import CircleHelp from 'lucide-svelte/icons/circle-help';
+	import X from 'lucide-svelte/icons/x';
 	import { getHelpContent } from '$lib/help/content';
 
 	let open = $state(false);
@@ -42,9 +44,9 @@
 	bind:this={trigger}
 	onclick={openHelp}
 	aria-label="Help"
-	class="fixed top-4 right-16 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-elevated text-sm font-semibold"
+	class="fixed top-4 right-16 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-elevated"
 >
-	?
+	<CircleHelp size={18} />
 </button>
 
 {#if open && content}
@@ -65,13 +67,8 @@
 	>
 		<div class="flex items-start justify-between gap-3">
 			<h2 id="help-title" class="text-lg font-semibold">Help. {content.title}</h2>
-			<button
-				type="button"
-				onclick={closeHelp}
-				aria-label="Close"
-				class="text-sm font-medium text-fg-muted"
-			>
-				Close
+			<button type="button" onclick={closeHelp} aria-label="Close" class="text-fg-muted">
+				<X size={20} />
 			</button>
 		</div>
 		<p class="mt-3 text-sm text-fg-muted">{content.description}</p>
