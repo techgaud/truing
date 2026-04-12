@@ -10,8 +10,12 @@
 		componentLabel,
 		componentTypeLabel
 	} from '$lib/intervals';
-
-	const METERS_PER_MILE = 1609.344;
+	import {
+		formatDistance,
+		metersToDisplayUnit,
+		parseDistanceToMeters,
+		distanceLabel
+	} from '$lib/units';
 
 	const componentId = $derived(Number(page.params.id));
 
@@ -63,7 +67,7 @@
 		const urgencyFraction = Math.max(distanceFraction ?? 0, timeFraction ?? 0);
 
 		const remainingMi =
-			distInterval != null ? Math.round((distInterval - wearMeters) / METERS_PER_MILE) : null;
+			distInterval != null ? Math.round(metersToDisplayUnit(distInterval - wearMeters)) : null;
 
 		return {
 			component,
@@ -71,7 +75,7 @@
 			currentBike,
 			wearMeters,
 			replacementDistanceMi:
-				distInterval != null ? Math.round(distInterval / METERS_PER_MILE) : null,
+				distInterval != null ? Math.round(metersToDisplayUnit(distInterval)) : null,
 			replacementTimeDaysValue: timeInterval ?? null,
 			remainingMi,
 			remainingDays,
@@ -128,7 +132,7 @@
 				odometer_meters_at_service:
 					serviceOdometerMiles === ''
 						? undefined
-						: Math.round(serviceOdometerMiles * METERS_PER_MILE),
+						: Math.round(parseDistanceToMeters(serviceOdometerMiles)),
 				notes: serviceNotes.trim() || undefined,
 				created_at: now,
 				updated_at: now
@@ -188,15 +192,16 @@
 		<section class="mt-8 rounded-card border border-border bg-surface-elevated p-5">
 			<h2 class="text-xs font-semibold tracking-wide text-fg-muted uppercase">Wear</h2>
 			<p class="mt-2 text-2xl font-semibold">
-				{(snap.wearMeters / METERS_PER_MILE).toFixed(1)} mi
+				{formatDistance(snap.wearMeters)}
 			</p>
 			{#if snap.replacementDistanceMi !== null && snap.remainingMi !== null}
 				<p class="mt-1 text-sm text-fg-muted">
 					{#if snap.remainingMi >= 0}
-						{snap.remainingMi.toLocaleString()} mi remaining of {snap.replacementDistanceMi.toLocaleString()}
-						mi interval.
+						{snap.remainingMi.toLocaleString()}
+						{distanceLabel()} remaining of {snap.replacementDistanceMi.toLocaleString()}
+						{distanceLabel()} interval.
 					{:else}
-						{Math.abs(snap.remainingMi).toLocaleString()} mi overdue.
+						{Math.abs(snap.remainingMi).toLocaleString()} {distanceLabel()} overdue.
 					{/if}
 				</p>
 			{/if}
@@ -219,7 +224,7 @@
 			{/if}
 			{#if snap.component.purchase_price_cents != null && snap.component.purchase_price_cents > 0 && snap.wearMeters > 0}
 				{@const priceDollars = snap.component.purchase_price_cents / 100}
-				{@const wearMiles = snap.wearMeters / METERS_PER_MILE}
+				{@const wearMiles = metersToDisplayUnit(snap.wearMeters)}
 				{@const centsPerMile = (snap.component.purchase_price_cents / wearMiles).toFixed(1)}
 				<p class="mt-3 text-sm text-fg-muted">
 					${priceDollars.toFixed(2)} · {wearMiles.toFixed(0)} mi · {centsPerMile}¢/mi

@@ -5,8 +5,7 @@
 	import { parseFile } from '$lib/import/parse';
 	import { syncStrava } from '$lib/strava';
 	import { haptic } from '$lib/haptics';
-
-	const METERS_PER_MILE = 1609.344;
+	import { formatDistance } from '$lib/units';
 	const SWIPE_THRESHOLD = 80;
 	const SWIPE_MAX = 120;
 	const UNDO_WINDOW_MS = 5000;
@@ -29,10 +28,6 @@
 	let dragDeltaX = $state(0);
 	let pendingDelete = $state<Ride | null>(null);
 	let pendingTimer: ReturnType<typeof setTimeout> | null = null;
-
-	function formatDistance(meters: number): string {
-		return `${(meters / METERS_PER_MILE).toFixed(1)} mi`;
-	}
 
 	function formatDate(iso: string): string {
 		const d = new Date(iso);

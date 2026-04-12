@@ -12,8 +12,7 @@
 		componentTypeLabel,
 		loadCustomTypes
 	} from '$lib/intervals';
-
-	const METERS_PER_MILE = 1609.344;
+	import { formatDistance, metersToDisplayUnit, distanceLabel } from '$lib/units';
 	const URGENT_CAP = 10;
 	const DUE_SOON_FRACTION = 0.9;
 	const DUE_SOON_DAYS = 14;
@@ -79,7 +78,7 @@
 			const urgencyFraction = Math.max(distanceFraction ?? 0, timeFraction ?? 0);
 
 			const remainingMi =
-				distInterval != null ? Math.round((distInterval - wearMeters) / METERS_PER_MILE) : null;
+				distInterval != null ? Math.round(metersToDisplayUnit(distInterval - wearMeters)) : null;
 			const remainingDays =
 				timeInterval != null ? Math.round(timeInterval - daysSinceInstall) : null;
 
@@ -171,9 +170,10 @@
 			row.distanceFraction !== null &&
 			(row.timeFraction === null || row.distanceFraction >= row.timeFraction);
 		if (useDistance && row.remainingMi !== null) {
+			const abs = Math.abs(row.remainingMi).toLocaleString();
 			return row.remainingMi < 0
-				? `${Math.abs(row.remainingMi).toLocaleString()} mi overdue`
-				: `${row.remainingMi.toLocaleString()} mi remaining`;
+				? `${abs} ${distanceLabel()} overdue`
+				: `${abs} ${distanceLabel()} remaining`;
 		}
 		if (row.remainingDays !== null) {
 			return row.remainingDays < 0
@@ -213,11 +213,10 @@
 
 		const items: ActivityItem[] = [];
 		for (const ride of rides) {
-			const mi = (ride.distance_meters / METERS_PER_MILE).toFixed(1);
 			items.push({
 				kind: 'ride',
 				timestamp: ride.started_at,
-				label: `${mi} mi ride`,
+				label: `${formatDistance(ride.distance_meters)} ride`,
 				bikeName: bikeById[ride.bike_id]?.name ?? 'Unknown bike',
 				href: null
 			});

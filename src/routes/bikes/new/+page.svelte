@@ -2,8 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { db, type BikeType } from '$lib/db';
-
-	const METERS_PER_MILE = 1609.344;
+	import { parseDistanceToMeters, distanceLabel } from '$lib/units';
 
 	let name = $state('');
 	let type = $state<BikeType | ''>('');
@@ -35,7 +34,9 @@
 				purchase_price_cents: purchasePrice === '' ? null : Math.round(purchasePrice * 100),
 				purchase_currency: purchasePrice === '' ? null : purchaseCurrency,
 				starting_odometer_meters:
-					startingOdometerMiles === '' ? 0 : Math.round(startingOdometerMiles * METERS_PER_MILE),
+					startingOdometerMiles === ''
+						? 0
+						: Math.round(parseDistanceToMeters(startingOdometerMiles)),
 				created_at: now,
 				updated_at: now
 			});
@@ -153,7 +154,7 @@
 				</div>
 				<div>
 					<label for="bike-odometer" class="block text-sm font-medium">
-						Starting odometer (miles)
+						Starting odometer ({distanceLabel()})
 					</label>
 					<input
 						id="bike-odometer"

@@ -3,8 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { liveQuery } from 'dexie';
 	import { db } from '$lib/db';
+	import { parseDistanceToMeters, distanceLabel } from '$lib/units';
 
-	const METERS_PER_MILE = 1609.344;
 	const METERS_PER_FOOT = 0.3048;
 
 	const bikes = liveQuery(() => db.bikes.filter((b) => !b.archived_at).toArray());
@@ -36,7 +36,7 @@
 				bike_id: bikeId,
 				started_at: startedAt,
 				started_at_tz: tz,
-				distance_meters: Math.round(distanceMiles * METERS_PER_MILE),
+				distance_meters: Math.round(parseDistanceToMeters(distanceMiles)),
 				duration_seconds: durationMinutes === '' ? undefined : Math.round(durationMinutes * 60),
 				elevation_gain_meters:
 					elevationFeet === '' ? null : Math.round(elevationFeet * METERS_PER_FOOT),
@@ -89,7 +89,9 @@
 			</div>
 
 			<div>
-				<label for="ride-distance" class="block text-sm font-medium">Distance (miles)</label>
+				<label for="ride-distance" class="block text-sm font-medium"
+					>Distance ({distanceLabel()})</label
+				>
 				<input
 					id="ride-distance"
 					type="number"

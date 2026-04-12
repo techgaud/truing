@@ -16,7 +16,7 @@
 	let formSaving = $state(false);
 	let formError = $state('');
 
-	const METERS_PER_MILE = 1609.344;
+	import { formatDistanceInt, metersToDisplayUnit, parseDistanceToMeters } from '$lib/units';
 
 	function openAddForm() {
 		editingType = null;
@@ -37,7 +37,7 @@
 		formCategory = ct.category;
 		formDistanceMeters =
 			ct.default_distance_meters != null
-				? Math.round(ct.default_distance_meters / METERS_PER_MILE)
+				? Math.round(metersToDisplayUnit(ct.default_distance_meters))
 				: '';
 		formTimeDays = ct.default_time_days ?? '';
 		formNotes = ct.notes ?? '';
@@ -66,7 +66,7 @@
 				label: formLabel.trim(),
 				category: formCategory.trim() || 'other',
 				default_distance_meters:
-					formDistanceMeters === '' ? null : Math.round(formDistanceMeters * METERS_PER_MILE),
+					formDistanceMeters === '' ? null : Math.round(parseDistanceToMeters(formDistanceMeters)),
 				default_time_days: formTimeDays === '' ? null : formTimeDays,
 				notes: formNotes.trim() || undefined,
 				created_at: editingType
@@ -114,7 +114,7 @@
 							<p class="text-sm text-fg-muted">
 								{ct.category}
 								{#if ct.default_distance_meters != null}
-									· {Math.round(ct.default_distance_meters / METERS_PER_MILE).toLocaleString()} mi
+									· {formatDistanceInt(ct.default_distance_meters)}
 								{/if}
 								{#if ct.default_time_days != null}
 									· {ct.default_time_days} days

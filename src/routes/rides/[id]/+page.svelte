@@ -4,8 +4,13 @@
 	import { resolve } from '$app/paths';
 	import { liveQuery } from 'dexie';
 	import { db } from '$lib/db';
+	import {
+		formatDistance,
+		metersToDisplayUnit,
+		parseDistanceToMeters,
+		distanceLabel
+	} from '$lib/units';
 
-	const METERS_PER_MILE = 1609.344;
 	const METERS_PER_FOOT = 0.3048;
 
 	const rideId = $derived(Number(page.params.id));
@@ -29,7 +34,7 @@
 	function openEdit() {
 		if (!$data || 'notFound' in $data) return;
 		const r = $data.ride;
-		editDistanceMiles = Math.round((r.distance_meters / METERS_PER_MILE) * 10) / 10;
+		editDistanceMiles = Math.round(metersToDisplayUnit(r.distance_meters) * 10) / 10;
 		editDate = r.started_at.slice(0, 10);
 		editDurationMinutes = r.duration_seconds != null ? Math.round(r.duration_seconds / 60) : '';
 		editElevationFeet =
@@ -47,7 +52,7 @@
 		try {
 			const now = new Date().toISOString();
 			await db.rides.update(rideId, {
-				distance_meters: Math.round(editDistanceMiles * METERS_PER_MILE),
+				distance_meters: Math.round(parseDistanceToMeters(editDistanceMiles)),
 				started_at: new Date(editDate).toISOString(),
 				duration_seconds:
 					editDurationMinutes === '' ? undefined : Math.round(editDurationMinutes * 60),
@@ -100,7 +105,7 @@
 		<header>
 			<a href={resolve('/rides')} class="text-sm text-fg-muted">← Rides</a>
 			<h1 class="mt-2 text-2xl font-semibold">
-				{(ride.distance_meters / METERS_PER_MILE).toFixed(1)} mi
+				{formatDistance(ride.distance_meters)}
 			</h1>
 			<p class="text-fg-muted">{bike?.name ?? 'Unknown bike'} · {formatDate(ride.started_at)}</p>
 		</header>
@@ -110,7 +115,7 @@
 				<dl class="space-y-3 text-sm">
 					<div class="flex justify-between">
 						<dt class="text-fg-muted">Distance</dt>
-						<dd>{(ride.distance_meters / METERS_PER_MILE).toFixed(1)} mi</dd>
+						<dd>{formatDistance(ride.distance_meters)}</dd>
 					</div>
 					<div class="flex justify-between">
 						<dt class="text-fg-muted">Date</dt>
@@ -155,7 +160,9 @@
 		{:else}
 			<form onsubmit={handleSave} class="mt-8 space-y-4">
 				<div>
-					<label for="edit-distance" class="block text-sm font-medium">Distance (miles)</label>
+					<label for="edit-distance" class="block text-sm font-medium"
+						>Distance ({distanceLabel()})</label
+					>
 					<input
 						id="edit-distance"
 						type="number"

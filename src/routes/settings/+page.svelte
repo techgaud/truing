@@ -10,6 +10,7 @@
 		setUnitPreference,
 		getUnitPreference,
 		loadUnitPreference,
+		formatDistanceInt,
 		type UnitSystem
 	} from '$lib/units';
 
@@ -288,7 +289,7 @@
 						<div class="rounded-card border border-border bg-surface-elevated px-4 py-3">
 							<p class="text-sm font-medium">{gear.name}</p>
 							<p class="text-xs text-fg-muted">
-								{Math.round(gear.distance / 1609.344).toLocaleString()} mi on Strava
+								{formatDistanceInt(gear.distance)} on Strava
 							</p>
 							<select
 								bind:value={gearMapping[gear.id]}

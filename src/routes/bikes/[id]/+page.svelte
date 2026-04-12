@@ -22,10 +22,15 @@
 		components: Array<{ type: string; default_name: string }>;
 	};
 
+	import {
+		formatDistance,
+		metersToDisplayUnit,
+		parseDistanceToMeters,
+		distanceLabel
+	} from '$lib/units';
+
 	const intervals = serviceIntervals as Record<string, ServiceInterval>;
 	const templates = templatesData as Record<string, Template>;
-
-	const METERS_PER_MILE = 1609.344;
 
 	const bikeId = $derived(Number(page.params.id));
 
@@ -198,10 +203,10 @@
 		addType = c.type;
 		addName = c.name ?? '';
 		addInstallDate = row.installation.installed_at.slice(0, 10);
-		addStartingWearMiles = c.initial_wear_meters ? c.initial_wear_meters / METERS_PER_MILE : '';
+		addStartingWearMiles = c.initial_wear_meters ? metersToDisplayUnit(c.initial_wear_meters) : '';
 		addIntervalDistanceMiles =
 			c.replacement_interval_distance_meters_override != null
-				? c.replacement_interval_distance_meters_override / METERS_PER_MILE
+				? metersToDisplayUnit(c.replacement_interval_distance_meters_override)
 				: '';
 		addIntervalTimeDays = c.replacement_interval_time_days_override ?? '';
 		addPurchasePrice = c.purchase_price_cents != null ? c.purchase_price_cents / 100 : '';
@@ -260,11 +265,11 @@
 			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const installedAt = new Date(addInstallDate).toISOString();
 			const initialWearMeters =
-				addStartingWearMiles === '' ? 0 : Math.round(addStartingWearMiles * METERS_PER_MILE);
+				addStartingWearMiles === '' ? 0 : Math.round(parseDistanceToMeters(addStartingWearMiles));
 			const intervalDistanceOverride =
 				addIntervalDistanceMiles === ''
 					? null
-					: Math.round(addIntervalDistanceMiles * METERS_PER_MILE);
+					: Math.round(parseDistanceToMeters(addIntervalDistanceMiles));
 			const intervalTimeOverride = addIntervalTimeDays === '' ? null : addIntervalTimeDays;
 			const priceCents = addPurchasePrice === '' ? null : Math.round(addPurchasePrice * 100);
 			const currency = addPurchasePrice === '' ? null : addPurchaseCurrency;
@@ -515,7 +520,7 @@
 							<div class="flex items-start justify-between gap-3">
 								<div class="min-w-0">
 									<p class="font-medium">
-										{(ride.distance_meters / 1609.344).toFixed(1)} mi
+										{formatDistance(ride.distance_meters)}
 									</p>
 									<p class="text-sm text-fg-muted">
 										{new Date(ride.started_at).toLocaleDateString(undefined, {
@@ -598,7 +603,7 @@
 					<div class="mt-4 space-y-4">
 						<div>
 							<label for="add-starting-wear" class="block text-sm font-medium">
-								Starting wear (miles)
+								Starting wear ({distanceLabel()})
 							</label>
 							<p class="text-xs text-fg-muted">
 								Prior wear when you added this component to Truing. Leave blank for brand new parts.
@@ -614,7 +619,7 @@
 						</div>
 						<div>
 							<label for="add-interval-distance" class="block text-sm font-medium">
-								Interval override, distance (miles)
+								Interval override, distance ({distanceLabel()})
 							</label>
 							<p class="text-xs text-fg-muted">
 								Overrides the shipped default for this component type.
