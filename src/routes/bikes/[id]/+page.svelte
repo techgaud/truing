@@ -29,6 +29,7 @@
 		distanceLabel
 	} from '$lib/units';
 	import { exportBikeAsPack } from '$lib/packs';
+	import ActionMenu from '$lib/components/ActionMenu.svelte';
 
 	const intervals = serviceIntervals as Record<string, ServiceInterval>;
 	const templates = templatesData as Record<string, Template>;
@@ -457,18 +458,21 @@
 					</p>
 				{/if}
 			{/if}
-			{#if $installed && $installed.length > 0}
-				<button type="button" onclick={handleExportPack} class="mt-3 text-sm text-accent">
-					Export as .truing pack
-				</button>
-			{/if}
 			{#if $bike.archived_at}
 				<p class="mt-2 text-sm text-fg-muted">Archived.</p>
-			{:else}
-				<button type="button" onclick={handleArchive} class="mt-4 text-sm text-danger">
-					Archive this bike
-				</button>
 			{/if}
+			<div class="mt-3">
+				<ActionMenu
+					actions={[
+						...(($installed?.length ?? 0) > 0
+							? [{ label: 'Export as .truing pack', onclick: handleExportPack }]
+							: []),
+						...(!$bike.archived_at
+							? [{ label: 'Archive this bike', onclick: handleArchive, danger: true }]
+							: [])
+					]}
+				/>
+			</div>
 		</header>
 
 		<section class="mt-8">

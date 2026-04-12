@@ -42,10 +42,12 @@ export function findNewCustomTypes(pack: Pack): PackComponent[] {
 export async function applyPack(
 	bikeId: number,
 	components: PackComponent[],
-	newCustomTypes: PackComponent[]
+	newCustomTypes: PackComponent[],
+	installDate?: string
 ): Promise<{ added: number }> {
 	const now = new Date().toISOString();
 	const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	const installedAt = installDate ? new Date(installDate).toISOString() : now;
 	let added = 0;
 
 	await db.transaction(
@@ -95,7 +97,7 @@ export async function applyPack(
 				await db.installations.add({
 					component_id: componentId,
 					bike_id: bikeId,
-					installed_at: now,
+					installed_at: installedAt,
 					installed_at_tz: tz,
 					created_at: now,
 					updated_at: now

@@ -61,6 +61,7 @@
 			packNewTypesChecked = newTypes.map(() => true);
 			packBikeId = '';
 			packCreateNew = !!pack.bike;
+			packInstallDate = todayISO();
 			packStatus = '';
 			availablePacks = [];
 		} catch (err) {
@@ -74,8 +75,14 @@
 	let packNewTypesChecked = $state<boolean[]>([]);
 	let packBikeId = $state<number | ''>('');
 	let packCreateNew = $state(false);
+	let packInstallDate = $state(todayISO());
 	let packStatus = $state('');
 	let packImporting = $state(false);
+
+	function todayISO(): string {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	}
 
 	async function handlePackFileSelect() {
 		const input = document.createElement('input');
@@ -95,6 +102,7 @@
 				packNewTypesChecked = newTypes.map(() => true);
 				packBikeId = '';
 				packCreateNew = !!pack.bike;
+				packInstallDate = todayISO();
 				packStatus = '';
 			} catch (err) {
 				packStatus = `Failed to load pack. ${err instanceof Error ? err.message : String(err)}`;
@@ -139,7 +147,7 @@
 			}
 			const selectedComponents = packData.components.filter((_, i) => packChecked[i]);
 			const selectedNewTypes = packNewTypes.filter((_, i) => packNewTypesChecked[i]);
-			const result = await applyPack(bikeId, selectedComponents, selectedNewTypes);
+			const result = await applyPack(bikeId, selectedComponents, selectedNewTypes, packInstallDate);
 			packStatus = `Applied! ${result.added} component${result.added !== 1 ? 's' : ''} added.`;
 			packData = null;
 		} catch (err) {
@@ -705,6 +713,16 @@
 						{/each}
 					</ul>
 				{/if}
+
+				<div class="mt-4">
+					<label for="pack-install-date" class="block text-sm font-medium">Install date</label>
+					<input
+						id="pack-install-date"
+						type="date"
+						bind:value={packInstallDate}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2 sm:w-64"
+					/>
+				</div>
 
 				<div class="mt-4 flex gap-3">
 					<button
