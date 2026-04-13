@@ -26,6 +26,7 @@
 
 	import {
 		formatDistance,
+		formatDistanceInt,
 		metersToDisplayUnit,
 		parseDistanceToMeters,
 		distanceLabel
@@ -34,6 +35,7 @@
 	import { exportBikeAsPack } from '$lib/packs';
 	import ActionMenu from '$lib/components/ActionMenu.svelte';
 	import Fab from '$lib/components/Fab.svelte';
+	import Pencil from 'lucide-svelte/icons/pencil';
 
 	const intervals = serviceIntervals as Record<string, ServiceInterval>;
 	const templates = templatesData as Record<string, Template>;
@@ -96,6 +98,59 @@
 	let templateDefaultDate = $state(todayISO());
 	let templateSaving = $state(false);
 	let templateError = $state('');
+
+	let showEditBike = $state(false);
+	let editName = $state('');
+	let editType = $state('');
+	let editMake = $state('');
+	let editModel = $state('');
+	let editYear = $state<number | ''>('');
+	let editPurchaseDate = $state('');
+	let editPurchasePrice = $state<number | ''>('');
+	let editPurchaseCurrency = $state('USD');
+	let editNotes = $state('');
+	let editSaving = $state(false);
+
+	function openEditBike() {
+		if (!$bike) return;
+		editName = $bike.name;
+		editType = $bike.type ?? '';
+		editMake = $bike.make ?? '';
+		editModel = $bike.model ?? '';
+		editYear = $bike.year ?? '';
+		editPurchaseDate = $bike.purchase_date ?? '';
+		editPurchasePrice = $bike.purchase_price_cents != null ? $bike.purchase_price_cents / 100 : '';
+		editPurchaseCurrency = $bike.purchase_currency ?? 'USD';
+		editNotes = $bike.notes ?? '';
+		showEditBike = true;
+	}
+
+	async function handleEditBike(e: SubmitEvent) {
+		e.preventDefault();
+		if (editSaving || !editName.trim()) return;
+		editSaving = true;
+		try {
+			await db.bikes.update(bikeId, {
+				name: editName.trim(),
+				type: (editType as import('$lib/db').BikeType) || undefined,
+				make: editMake.trim() || undefined,
+				model: editModel.trim() || undefined,
+				year: editYear === '' ? undefined : editYear,
+				purchase_date: editPurchaseDate || undefined,
+				purchase_price_cents:
+					editPurchasePrice === '' ? null : Math.round(Number(editPurchasePrice) * 100),
+				purchase_currency: editPurchasePrice === '' ? null : editPurchaseCurrency,
+				notes: editNotes.trim() || undefined,
+				updated_at: new Date().toISOString()
+			});
+			showEditBike = false;
+			toast.success('Bike updated.');
+		} catch (err) {
+			toast.error(`Update failed. ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			editSaving = false;
+		}
+	}
 
 	function todayISO(): string {
 		const d = new Date();
@@ -410,44 +465,101 @@
 			{/if}
 
 			<div class="mt-3 flex items-start justify-between gap-3">
-				<div>
+				<div class="min-w-0">
 					<h1 class="text-2xl font-semibold">{$bike.name}</h1>
-					{#if $bike.type}
+					{#if $bike.year || $bike.make || $bike.model}
+						<p class="text-fg-muted">
+							{[$bike.year, $bike.make, $bike.model].filter(Boolean).join(' ')}
+							{#if $bike.type}
+								<span class="capitalize">· {$bike.type}</span>
+							{/if}
+						</p>
+					{:else if $bike.type}
 						<p class="text-fg-muted capitalize">{$bike.type}</p>
 					{/if}
-					{#if $installed}
-						{@const totalSpendCents = $installed.reduce(
-							(sum, r) => sum + (r.component?.purchase_price_cents ?? 0),
-							0
-						)}
-						{#if totalSpendCents > 0}
-							{@const partCount = $installed.filter(
-								(r) => r.component?.purchase_price_cents
-							).length}
-							<p class="mt-1 text-sm text-fg-muted">
-								Total components ${(totalSpendCents / 100).toFixed(2)} across {partCount} part{partCount !==
-								1
-									? 's'
-									: ''}.
-							</p>
-						{/if}
-					{/if}
 					{#if $bike.archived_at}
-						<p class="mt-2 text-sm text-fg-muted">Archived.</p>
+						<p class="mt-1 text-sm text-fg-muted">Archived.</p>
 					{/if}
 				</div>
-				<ActionMenu
-					actions={[
-						...(($installed?.length ?? 0) > 0
-							? [{ label: 'Export as .truing pack', onclick: handleExportPack }]
-							: []),
-						...(!$bike.archived_at
-							? [{ label: 'Archive this bike', onclick: handleArchive, danger: true }]
-							: [])
-					]}
-				/>
+				<div class="flex shrink-0 items-center gap-2">
+					<button
+						type="button"
+						onclick={openEditBike}
+						aria-label="Edit bike"
+						class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-elevated"
+					>
+						<Pencil size={16} />
+					</button>
+					<ActionMenu
+						actions={[
+							...(($installed?.length ?? 0) > 0
+								? [{ label: 'Export as .truing pack', onclick: handleExportPack }]
+								: []),
+							...(!$bike.archived_at
+								? [{ label: 'Archive this bike', onclick: handleArchive, danger: true }]
+								: [])
+						]}
+					/>
+				</div>
 			</div>
 		</header>
+
+		<section class="mt-6 rounded-card border border-border bg-surface-elevated p-4">
+			<div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+				{#if $bike.type}
+					<div>
+						<p class="text-fg-muted">Type</p>
+						<p class="capitalize">{$bike.type}</p>
+					</div>
+				{/if}
+				{#if $bike.purchase_date}
+					<div>
+						<p class="text-fg-muted">Purchased</p>
+						<p>
+							{new Date($bike.purchase_date).toLocaleDateString(undefined, {
+								month: 'short',
+								day: 'numeric',
+								year: 'numeric'
+							})}
+						</p>
+					</div>
+				{/if}
+				{#if $bike.purchase_price_cents}
+					<div>
+						<p class="text-fg-muted">Purchase price</p>
+						<p>
+							${($bike.purchase_price_cents / 100).toFixed(2)}
+							{$bike.purchase_currency ?? ''}
+						</p>
+					</div>
+				{/if}
+				{#if $bike.starting_odometer_meters > 0}
+					<div>
+						<p class="text-fg-muted">Starting odometer</p>
+						<p>{formatDistanceInt($bike.starting_odometer_meters)}</p>
+					</div>
+				{/if}
+				{#if $installed}
+					{@const totalSpendCents = $installed.reduce(
+						(sum, r) => sum + (r.component?.purchase_price_cents ?? 0),
+						0
+					)}
+					{#if totalSpendCents > 0}
+						{@const partCount = $installed.filter((r) => r.component?.purchase_price_cents).length}
+						<div>
+							<p class="text-fg-muted">Component spend</p>
+							<p>
+								${(totalSpendCents / 100).toFixed(2)} ({partCount}
+								part{partCount !== 1 ? 's' : ''})
+							</p>
+						</div>
+					{/if}
+				{/if}
+			</div>
+			{#if $bike.notes}
+				<p class="mt-3 text-sm whitespace-pre-wrap text-fg-muted">{$bike.notes}</p>
+			{/if}
+		</section>
 
 		<section class="mt-8">
 			<h2 class="text-lg font-semibold">Components</h2>
@@ -811,6 +923,138 @@
 					Cancel
 				</button>
 			</div>
+		</div>
+	</div>
+{/if}
+
+{#if showEditBike}
+	<div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="edit-bike-title"
+			class="w-full max-w-md rounded-card bg-surface-elevated p-6"
+		>
+			<h2 id="edit-bike-title" class="text-lg font-semibold">Edit bike</h2>
+			<form onsubmit={handleEditBike} class="mt-4 space-y-4">
+				<div>
+					<label for="edit-bike-name" class="block text-sm font-medium">Name</label>
+					<input
+						id="edit-bike-name"
+						type="text"
+						required
+						bind:value={editName}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="edit-bike-type" class="block text-sm font-medium">Type</label>
+					<select
+						id="edit-bike-type"
+						bind:value={editType}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					>
+						<option value="">None</option>
+						<option value="road">Road</option>
+						<option value="gravel">Gravel</option>
+						<option value="mtb">MTB</option>
+						<option value="commuter">Commuter</option>
+						<option value="ebike">E-bike</option>
+						<option value="touring">Touring</option>
+						<option value="other">Other</option>
+					</select>
+				</div>
+				<div>
+					<label for="edit-bike-make" class="block text-sm font-medium">Make</label>
+					<input
+						id="edit-bike-make"
+						type="text"
+						bind:value={editMake}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="edit-bike-model" class="block text-sm font-medium">Model</label>
+					<input
+						id="edit-bike-model"
+						type="text"
+						bind:value={editModel}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="edit-bike-year" class="block text-sm font-medium">Year</label>
+					<input
+						id="edit-bike-year"
+						type="number"
+						min="1900"
+						max="2100"
+						bind:value={editYear}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="edit-bike-purchase-date" class="block text-sm font-medium"
+						>Purchase date</label
+					>
+					<input
+						id="edit-bike-purchase-date"
+						type="date"
+						bind:value={editPurchaseDate}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="edit-bike-price" class="block text-sm font-medium">Purchase price</label>
+					<div class="mt-1 flex gap-2">
+						<input
+							id="edit-bike-price"
+							type="number"
+							min="0"
+							step="0.01"
+							bind:value={editPurchasePrice}
+							class="flex-1 rounded-button border border-border bg-surface px-3 py-2"
+						/>
+						<select
+							bind:value={editPurchaseCurrency}
+							aria-label="Currency"
+							class="rounded-button border border-border bg-surface px-3 py-2"
+						>
+							<option value="USD">USD</option>
+							<option value="EUR">EUR</option>
+							<option value="GBP">GBP</option>
+							<option value="CAD">CAD</option>
+							<option value="AUD">AUD</option>
+							<option value="JPY">JPY</option>
+						</select>
+					</div>
+				</div>
+				<div>
+					<label for="edit-bike-notes" class="block text-sm font-medium">Notes</label>
+					<textarea
+						id="edit-bike-notes"
+						rows="3"
+						bind:value={editNotes}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					></textarea>
+				</div>
+				<div class="flex gap-3 pt-2">
+					<button
+						type="submit"
+						disabled={editSaving}
+						class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
+					>
+						{editSaving ? 'Saving…' : 'Save'}
+					</button>
+					<button
+						type="button"
+						onclick={() => (showEditBike = false)}
+						class="rounded-button px-5 py-2 font-medium text-fg-muted"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
 		</div>
 	</div>
 {/if}

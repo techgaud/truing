@@ -5,9 +5,87 @@
 	import { componentTypeLabel } from '$lib/intervals';
 	import { checkComponentShareable, shareText } from '$lib/share';
 	import { toast } from '$lib/toast';
+	import { formatDistanceInt } from '$lib/units';
 	import Fab from '$lib/components/Fab.svelte';
+	import Pencil from 'lucide-svelte/icons/pencil';
 
-	const allBikes = liveQuery(() => db.bikes.toArray());
+	let editBikeId = $state<number | null>(null);
+	let editName = $state('');
+	let editType = $state('');
+	let editMake = $state('');
+	let editModel = $state('');
+	let editYear = $state<number | ''>('');
+	let editSaving = $state(false);
+
+	function openQuickEdit(bike: BikeWithStats) {
+		editBikeId = bike.id;
+		editName = bike.name;
+		editType = bike.type ?? '';
+		editMake = bike.make ?? '';
+		editModel = bike.model ?? '';
+		editYear = bike.year ?? '';
+	}
+
+	async function handleQuickEdit(e: SubmitEvent) {
+		e.preventDefault();
+		if (editSaving || !editBikeId || !editName.trim()) return;
+		editSaving = true;
+		try {
+			await db.bikes.update(editBikeId, {
+				name: editName.trim(),
+				type: (editType as BikeType) || undefined,
+				make: editMake.trim() || undefined,
+				model: editModel.trim() || undefined,
+				year: editYear === '' ? undefined : editYear,
+				updated_at: new Date().toISOString()
+			});
+			editBikeId = null;
+			toast.success('Bike updated.');
+		} catch (err) {
+			toast.error(`Update failed. ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			editSaving = false;
+		}
+	}
+
+	import type { BikeType } from '$lib/db';
+
+	type BikeWithStats = {
+		id: number;
+		name: string;
+		type?: BikeType;
+		make?: string;
+		model?: string;
+		year?: number;
+		purchase_date?: string;
+		archived_at?: string | null;
+		odometerMeters: number;
+		rideCount: number;
+	};
+
+	const allBikes = liveQuery<BikeWithStats[]>(async () => {
+		const bikes = await db.bikes.toArray();
+		const result: BikeWithStats[] = [];
+		for (const bike of bikes) {
+			if (bike.id === undefined) continue;
+			const rides = await db.rides.where({ bike_id: bike.id }).toArray();
+			const odometerMeters =
+				bike.starting_odometer_meters + rides.reduce((sum, r) => sum + r.distance_meters, 0);
+			result.push({
+				id: bike.id,
+				name: bike.name,
+				type: bike.type,
+				make: bike.make,
+				model: bike.model,
+				year: bike.year,
+				purchase_date: bike.purchase_date,
+				archived_at: bike.archived_at,
+				odometerMeters,
+				rideCount: rides.length
+			});
+		}
+		return result;
+	});
 
 	const partsBin = liveQuery(async () => {
 		const allComponents = await db.components.filter((c) => !c.retired_at).toArray();
@@ -142,16 +220,34 @@
 	{:else if filteredBikes}
 		<ul class="mt-6 space-y-2">
 			{#each filteredBikes as bike (bike.id)}
-				<li>
-					<a
-						href={resolve('/bikes/[id]', { id: String(bike.id) })}
-						class="block rounded-card border border-border bg-surface-elevated px-4 py-3"
-					>
+				<li class="flex items-center gap-2 rounded-card border border-border bg-surface-elevated">
+					<a href={resolve('/bikes/[id]', { id: String(bike.id) })} class="block flex-1 px-4 py-3">
 						<p class="font-medium">{bike.name}</p>
-						{#if bike.type}
-							<p class="text-sm text-fg-muted capitalize">{bike.type}</p>
-						{/if}
+						<p class="text-sm text-fg-muted">
+							{[bike.year, bike.make, bike.model].filter(Boolean).join(' ')}{bike.year ||
+							bike.make ||
+							bike.model
+								? bike.type
+									? ` · ${bike.type.charAt(0).toUpperCase() + bike.type.slice(1)}`
+									: ''
+								: bike.type
+									? bike.type.charAt(0).toUpperCase() + bike.type.slice(1)
+									: ''}
+						</p>
+						<p class="mt-1 text-sm text-fg-muted">
+							{formatDistanceInt(bike.odometerMeters)} · {bike.rideCount} ride{bike.rideCount !== 1
+								? 's'
+								: ''}
+						</p>
 					</a>
+					<button
+						type="button"
+						onclick={() => openQuickEdit(bike)}
+						aria-label="Edit {bike.name}"
+						class="shrink-0 p-3 text-fg-muted"
+					>
+						<Pencil size={16} />
+					</button>
 				</li>
 			{/each}
 		</ul>
@@ -250,6 +346,93 @@
 					</button>
 				</div>
 			</div>
+		</div>
+	</div>
+{/if}
+
+{#if editBikeId !== null}
+	<div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="quick-edit-title"
+			class="w-full max-w-md rounded-card bg-surface-elevated p-6"
+		>
+			<h2 id="quick-edit-title" class="text-lg font-semibold">Edit bike</h2>
+			<form onsubmit={handleQuickEdit} class="mt-4 space-y-4">
+				<div>
+					<label for="qe-name" class="block text-sm font-medium">Name</label>
+					<input
+						id="qe-name"
+						type="text"
+						required
+						bind:value={editName}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="qe-type" class="block text-sm font-medium">Type</label>
+					<select
+						id="qe-type"
+						bind:value={editType}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					>
+						<option value="">None</option>
+						<option value="road">Road</option>
+						<option value="gravel">Gravel</option>
+						<option value="mtb">MTB</option>
+						<option value="commuter">Commuter</option>
+						<option value="ebike">E-bike</option>
+						<option value="touring">Touring</option>
+						<option value="other">Other</option>
+					</select>
+				</div>
+				<div>
+					<label for="qe-make" class="block text-sm font-medium">Make</label>
+					<input
+						id="qe-make"
+						type="text"
+						bind:value={editMake}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="qe-model" class="block text-sm font-medium">Model</label>
+					<input
+						id="qe-model"
+						type="text"
+						bind:value={editModel}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div>
+					<label for="qe-year" class="block text-sm font-medium">Year</label>
+					<input
+						id="qe-year"
+						type="number"
+						min="1900"
+						max="2100"
+						bind:value={editYear}
+						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
+					/>
+				</div>
+				<div class="flex gap-3 pt-2">
+					<button
+						type="submit"
+						disabled={editSaving}
+						class="rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
+					>
+						{editSaving ? 'Saving…' : 'Save'}
+					</button>
+					<button
+						type="button"
+						onclick={() => (editBikeId = null)}
+						class="rounded-button px-5 py-2 font-medium text-fg-muted"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
 		</div>
 	</div>
 {/if}
