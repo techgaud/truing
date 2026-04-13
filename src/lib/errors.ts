@@ -1,4 +1,5 @@
 import { db } from './db';
+import { APP_VERSION } from './version';
 
 export const ERR = {
 	E1001: 'Dexie failed to open database',
@@ -41,7 +42,7 @@ export async function logError(
 			context,
 			stack,
 			user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-			app_version: '0.0.1'
+			app_version: APP_VERSION
 		});
 		const count = await db.error_log.count();
 		if (count > MAX_LOG_ENTRIES) {

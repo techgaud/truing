@@ -1,4 +1,5 @@
 import { db, type Bike, type Ride, type Component, type ServiceLogEntry } from './db';
+import { APP_VERSION } from './version';
 
 async function sha256(text: string): Promise<string> {
 	const buffer = new TextEncoder().encode(text);
@@ -32,7 +33,7 @@ export async function exportAll(): Promise<string> {
 		{
 			format: 'truing-backup',
 			schema_version: 1,
-			app_version: '0.0.1',
+			app_version: APP_VERSION,
 			exported_at: new Date().toISOString(),
 			bikes,
 			components,
