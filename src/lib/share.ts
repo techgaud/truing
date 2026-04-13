@@ -136,16 +136,26 @@ export function retiredComponentText(
 	return `${dist} ${unit} on my ${name}.${bikeStr}\n\nTracked with Truing`;
 }
 
-export async function shareText(text: string): Promise<boolean> {
-	if (typeof navigator !== 'undefined' && navigator.share) {
+export async function shareText(text: string, photo?: Blob): Promise<boolean> {
+	if (typeof navigator === 'undefined') return false;
+
+	if (navigator.share) {
 		try {
+			if (photo) {
+				const file = new File([photo], 'bike.jpg', { type: 'image/jpeg' });
+				if (navigator.canShare && navigator.canShare({ files: [file] })) {
+					await navigator.share({ text, files: [file] });
+					return true;
+				}
+			}
 			await navigator.share({ text });
 			return true;
 		} catch {
 			return false;
 		}
 	}
-	if (typeof navigator !== 'undefined' && navigator.clipboard) {
+
+	if (navigator.clipboard) {
 		try {
 			await navigator.clipboard.writeText(text);
 			return true;

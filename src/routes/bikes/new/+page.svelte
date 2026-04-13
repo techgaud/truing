@@ -5,11 +5,14 @@
 	import { parseDistanceToMeters, distanceLabel } from '$lib/units';
 	import { newBikeText, shareText } from '$lib/share';
 	import { toast } from '$lib/toast';
+	import { pickPhoto, resizeImage } from '$lib/photo';
 
 	let name = $state('');
 	let type = $state<BikeType | ''>('');
 	let error = $state('');
 	let saving = $state(false);
+	let photoBlob = $state<Blob | null>(null);
+	let photoPreview = $state<string | null>(null);
 
 	let make = $state('');
 	let model = $state('');
@@ -18,6 +21,24 @@
 	let purchasePrice = $state<number | ''>('');
 	let purchaseCurrency = $state('USD');
 	let startingOdometerMiles = $state<number | ''>('');
+
+	async function handleAddPhoto() {
+		try {
+			const blob = await pickPhoto();
+			if (!blob) return;
+			const resized = await resizeImage(blob);
+			photoBlob = resized;
+			photoPreview = URL.createObjectURL(resized);
+		} catch (err) {
+			toast.error(`Photo failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
+	function handleRemovePhoto() {
+		if (photoPreview) URL.revokeObjectURL(photoPreview);
+		photoBlob = null;
+		photoPreview = null;
+	}
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
@@ -39,6 +60,7 @@
 					startingOdometerMiles === ''
 						? 0
 						: Math.round(parseDistanceToMeters(startingOdometerMiles)),
+				photo_blob: photoBlob,
 				created_at: now,
 				updated_at: now
 			});
@@ -47,7 +69,11 @@
 				model: model.trim() || undefined,
 				year: year === '' ? undefined : year
 			});
-			toast.success('Bike added!', { label: 'Share', onclick: () => shareText(text) });
+			const sharePhoto = photoBlob ?? undefined;
+			toast.success('Bike added!', {
+				label: 'Share',
+				onclick: () => shareText(text, sharePhoto)
+			});
 			await goto(resolve('/'));
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
@@ -92,6 +118,30 @@
 				<option value="touring">Touring</option>
 				<option value="other">Other</option>
 			</select>
+		</div>
+
+		<div>
+			<p class="block text-sm font-medium">Photo (optional)</p>
+			{#if photoPreview}
+				<div class="mt-2">
+					<img
+						src={photoPreview}
+						alt="Bike preview"
+						class="h-32 w-full rounded-card object-cover"
+					/>
+					<button type="button" onclick={handleRemovePhoto} class="mt-1 text-sm text-danger">
+						Remove
+					</button>
+				</div>
+			{:else}
+				<button
+					type="button"
+					onclick={handleAddPhoto}
+					class="mt-1 rounded-button border border-border px-4 py-2 text-sm font-medium"
+				>
+					Add photo
+				</button>
+			{/if}
 		</div>
 
 		<details class="rounded-card border border-border bg-surface-elevated px-4 py-3">
