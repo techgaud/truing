@@ -623,7 +623,7 @@
 						Enter a passphrase to encrypt your Strava credentials. You will need this passphrase
 						each time you open Truing in a new tab.
 					</p>
-					<div class="mt-3 flex gap-2">
+					<div class="mt-3 flex flex-wrap gap-2">
 						<input
 							type="password"
 							bind:value={passphrase}
@@ -746,7 +746,7 @@
 				v{premigrationBackup.fromVersion} to v{premigrationBackup.toVersion}. If something went
 				wrong with the upgrade, you can restore this backup.
 			</p>
-			<div class="mt-3 flex gap-3">
+			<div class="mt-3 flex flex-wrap gap-3">
 				<button
 					type="button"
 					onclick={handlePremigrationRestore}
@@ -816,7 +816,7 @@
 				{/if}
 
 				{#if packData.bike}
-					<div class="mt-3 flex gap-3">
+					<div class="mt-3 flex flex-wrap gap-3">
 						<label class="flex items-center gap-2 text-sm">
 							<input type="radio" bind:group={packCreateNew} value={true} />
 							Create new bike
@@ -882,7 +882,7 @@
 					/>
 				</div>
 
-				<div class="mt-4 flex gap-3">
+				<div class="mt-4 flex flex-wrap gap-3">
 					<button
 						type="button"
 						onclick={handlePackApply}
