@@ -6,8 +6,15 @@
 	import { checkComponentShareable, shareText } from '$lib/share';
 	import { toast } from '$lib/toast';
 	import { formatDistanceInt } from '$lib/units';
+	import { bikeActions, reactivateBike, deleteBike } from '$lib/bike-actions';
 	import Fab from '$lib/components/Fab.svelte';
+	import ActionMenu from '$lib/components/ActionMenu.svelte';
+	import RetireBikeModal from '$lib/components/RetireBikeModal.svelte';
 	import Pencil from 'lucide-svelte/icons/pencil';
+	import { pickPhoto, resizeImage } from '$lib/photo';
+
+	let retireBikeId = $state<number | null>(null);
+	let retireBikeName = $state('');
 
 	let editBikeId = $state<number | null>(null);
 	let editName = $state('');
@@ -16,6 +23,8 @@
 	let editModel = $state('');
 	let editYear = $state<number | ''>('');
 	let editSaving = $state(false);
+	let editPhotoPreview = $state<string | null>(null);
+	let editPhotoBlob = $state<Blob | null>(null);
 
 	function openQuickEdit(bike: BikeWithStats) {
 		editBikeId = bike.id;
@@ -24,6 +33,26 @@
 		editMake = bike.make ?? '';
 		editModel = bike.model ?? '';
 		editYear = bike.year ?? '';
+		editPhotoPreview = null;
+		editPhotoBlob = null;
+	}
+
+	async function handleEditPhoto() {
+		try {
+			const blob = await pickPhoto();
+			if (!blob) return;
+			const resized = await resizeImage(blob);
+			editPhotoBlob = resized;
+			editPhotoPreview = URL.createObjectURL(resized);
+		} catch (err) {
+			toast.error(`Photo failed. ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
+	function removeEditPhoto() {
+		if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview);
+		editPhotoBlob = null;
+		editPhotoPreview = null;
 	}
 
 	async function handleQuickEdit(e: SubmitEvent) {
@@ -31,14 +60,18 @@
 		if (editSaving || !editBikeId || !editName.trim()) return;
 		editSaving = true;
 		try {
-			await db.bikes.update(editBikeId, {
+			const updates: Record<string, unknown> = {
 				name: editName.trim(),
 				type: (editType as BikeType) || undefined,
 				make: editMake.trim() || undefined,
 				model: editModel.trim() || undefined,
 				year: editYear === '' ? undefined : editYear,
 				updated_at: new Date().toISOString()
-			});
+			};
+			if (editPhotoBlob) {
+				updates.photo_blob = editPhotoBlob;
+			}
+			await db.bikes.update(editBikeId, updates);
 			editBikeId = null;
 			toast.success('Bike updated.');
 		} catch (err) {
@@ -196,7 +229,7 @@
 					? 'bg-accent text-accent-fg'
 					: 'text-fg-muted'}"
 			>
-				Archived ({archivedCount})
+				Retired ({archivedCount})
 			</button>
 		</div>
 	{/if}
@@ -204,7 +237,7 @@
 	{#if filteredBikes?.length === 0}
 		<div class="mt-12 flex flex-col items-center text-center">
 			{#if filter === 'archived'}
-				<p class="text-fg-muted">No archived bikes.</p>
+				<p class="text-fg-muted">No retired bikes.</p>
 			{:else if $allBikes?.length === 0}
 				<p class="text-fg-muted">No bikes yet.</p>
 				<a
@@ -248,6 +281,16 @@
 					>
 						<Pencil size={16} />
 					</button>
+					<ActionMenu
+						actions={bikeActions(bike.id, bike.name, !!bike.archived_at, {
+							onRetire: () => {
+								retireBikeId = bike.id;
+								retireBikeName = bike.name;
+							},
+							onReactivate: () => reactivateBike(bike.id, bike.name),
+							onDelete: () => deleteBike(bike.id, bike.name)
+						})}
+					/>
 				</li>
 			{/each}
 		</ul>
@@ -416,6 +459,27 @@
 						class="mt-1 w-full rounded-button border border-border bg-surface px-3 py-2"
 					/>
 				</div>
+				<div>
+					<p class="block text-sm font-medium">Photo</p>
+					{#if editPhotoPreview}
+						<img
+							src={editPhotoPreview}
+							alt="Bike preview"
+							class="mt-1 h-24 w-full rounded-card object-cover"
+						/>
+						<button type="button" onclick={removeEditPhoto} class="mt-1 text-sm text-danger">
+							Remove
+						</button>
+					{:else}
+						<button
+							type="button"
+							onclick={handleEditPhoto}
+							class="mt-1 rounded-button border border-border px-4 py-2 text-sm font-medium"
+						>
+							Add photo
+						</button>
+					{/if}
+				</div>
 				<div class="flex gap-3 pt-2">
 					<button
 						type="submit"
@@ -435,4 +499,12 @@
 			</form>
 		</div>
 	</div>
+{/if}
+
+{#if retireBikeId !== null}
+	<RetireBikeModal
+		bikeId={retireBikeId}
+		bikeName={retireBikeName}
+		onclose={() => (retireBikeId = null)}
+	/>
 {/if}

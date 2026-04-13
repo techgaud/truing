@@ -14,6 +14,9 @@ export interface Bike {
 	purchase_currency?: string | null;
 	starting_odometer_meters: number;
 	archived_at?: string | null;
+	archive_reason?: string | null;
+	sale_price_cents?: number | null;
+	sale_currency?: string | null;
 	notes?: string;
 	photo_blob?: Blob | null;
 	strava_gear_id?: string | null;

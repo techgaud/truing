@@ -2,6 +2,7 @@
 
 Things that are deferred until a prerequisite lands or a follow up commit picks them up.
 
+- Bike photo features. Zoom, multiple photos, gallery view, photo date, captions.
 - Quick-add-ride shortcut. Stripped down 3-tap form (bike, distance, done) with a FAB on the rides screen and a PWA home screen shortcut.
 - Paid data packs. Authenticated delivery via Cloudflare Workers route that verifies purchase status before serving .truing files. Payment integration (Stripe or Lemon Squeezy). Pack marketplace UI.
 - Sharing settings UI. Let users toggle which Tier 2 component types get share prompts on retirement.

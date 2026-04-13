@@ -5,7 +5,8 @@
 	import { liveQuery } from 'dexie';
 	import { db } from '$lib/db';
 	import { toast } from '$lib/toast';
-	import { retiredBikeText, bikeOdometer, shareText } from '$lib/share';
+	import { bikeActions, reactivateBike, deleteBike, retireReasonLabel } from '$lib/bike-actions';
+	import RetireBikeModal from '$lib/components/RetireBikeModal.svelte';
 	import serviceIntervals from '$lib/service_intervals.json';
 	import templatesData from '$lib/component_templates.json';
 
@@ -256,25 +257,7 @@
 		URL.revokeObjectURL(url);
 	}
 
-	async function handleArchive() {
-		if (!$bike) return;
-		if (!confirm(`Archive ${$bike.name}? It will be hidden from the dashboard. Its history stays.`))
-			return;
-		try {
-			const totalMeters = await bikeOdometer(bikeId);
-			const now = new Date().toISOString();
-			await db.bikes.update(bikeId, { archived_at: now, updated_at: now });
-			const text = retiredBikeText($bike.name, totalMeters, $bike.purchase_date);
-			const photo = $bike.photo_blob ?? undefined;
-			toast.success(`${$bike.name} archived.`, {
-				label: 'Share',
-				onclick: () => shareText(text, photo)
-			});
-			goto(resolve('/bikes'));
-		} catch (err) {
-			alert(`Archive failed. ${err instanceof Error ? err.message : String(err)}`);
-		}
-	}
+	let showRetireModal = $state(false);
 
 	async function handleUninstall(installationId: number) {
 		if (
@@ -436,11 +419,35 @@
 	<title>{$bike?.name ?? 'Bike'} · Truing</title>
 </svelte:head>
 
-<main class="mx-auto max-w-2xl px-6 py-8">
+<main
+	class="mx-auto max-w-2xl px-6 py-8 {$bike?.archived_at
+		? 'rounded-card border border-border bg-surface-elevated/50'
+		: ''}"
+>
 	{#if $bike === null}
 		<p class="text-fg-muted">Bike not found.</p>
 		<a href={resolve('/bikes')} class="mt-4 inline-block text-accent">← Back to bikes</a>
 	{:else if $bike}
+		{#if $bike.archived_at}
+			<div class="mb-4 rounded-card bg-fg-muted/10 px-4 py-3 text-center">
+				<p class="text-sm font-semibold uppercase tracking-wide text-fg-muted">
+					{retireReasonLabel($bike.archive_reason)}
+				</p>
+				<p class="mt-1 text-xs text-fg-muted">
+					{new Date($bike.archived_at).toLocaleDateString(undefined, {
+						month: 'short',
+						day: 'numeric',
+						year: 'numeric'
+					})}
+				</p>
+				{#if $bike.sale_price_cents}
+					<p class="mt-1 text-xs text-fg-muted">
+						Sale price ${($bike.sale_price_cents / 100).toFixed(2)}
+						{$bike.sale_currency ?? ''}
+					</p>
+				{/if}
+			</div>
+		{/if}
 		<header>
 			<a href={resolve('/bikes')} class="text-sm text-fg-muted">← Bikes</a>
 
@@ -477,9 +484,6 @@
 					{:else if $bike.type}
 						<p class="text-fg-muted capitalize">{$bike.type}</p>
 					{/if}
-					{#if $bike.archived_at}
-						<p class="mt-1 text-sm text-fg-muted">Archived.</p>
-					{/if}
 				</div>
 				<div class="flex shrink-0 items-center gap-2">
 					<button
@@ -491,14 +495,16 @@
 						<Pencil size={16} />
 					</button>
 					<ActionMenu
-						actions={[
-							...(($installed?.length ?? 0) > 0
-								? [{ label: 'Export as .truing pack', onclick: handleExportPack }]
-								: []),
-							...(!$bike.archived_at
-								? [{ label: 'Archive this bike', onclick: handleArchive, danger: true }]
-								: [])
-						]}
+						actions={bikeActions(bikeId, $bike.name, !!$bike.archived_at, {
+							onRetire: () => (showRetireModal = true),
+							onExportPack: ($installed?.length ?? 0) > 0 ? handleExportPack : undefined,
+							onReactivate: () => reactivateBike(bikeId, $bike.name),
+							onDelete: async () => {
+								if (await deleteBike(bikeId, $bike.name)) {
+									goto(resolve('/bikes'));
+								}
+							}
+						})}
 					/>
 				</div>
 			</div>
@@ -1057,4 +1063,15 @@
 			</form>
 		</div>
 	</div>
+{/if}
+
+{#if showRetireModal && $bike}
+	<RetireBikeModal
+		{bikeId}
+		bikeName={$bike.name}
+		bikeInfo={{ make: $bike.make, model: $bike.model, year: $bike.year }}
+		bikePhoto={$bike.photo_blob}
+		installed={$installed}
+		onclose={() => (showRetireModal = false)}
+	/>
 {/if}

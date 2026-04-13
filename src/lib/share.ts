@@ -117,6 +117,40 @@ export function retiredBikeText(
 	return `${bikeName}, retired at ${dist} ${unit}.\n\nTracked with Truing`;
 }
 
+export function archiveShareText(
+	reason: string,
+	bikeName: string,
+	totalMeters: number,
+	bikeInfo?: { make?: string; model?: string; year?: number },
+	tradedForName?: string
+): string {
+	const dist = formatMilestone(Math.round(metersToDisplayUnit(totalMeters)));
+	const unit = unitLabel();
+
+	switch (reason) {
+		case 'sold':
+			return `Sold my ${bikeName} after ${dist} ${unit}. Sad to see it go, happy to see what's next.\n\nTracked with Truing`;
+		case 'traded':
+			return tradedForName
+				? `Traded my ${bikeName} after ${dist} ${unit} for a ${tradedForName}.\n\nTracked with Truing`
+				: `Traded my ${bikeName} after ${dist} ${unit}.\n\nTracked with Truing`;
+		case 'donated':
+			return `Donated my ${bikeName} after ${dist} ${unit}. Giving it a second life.\n\nTracked with Truing`;
+		case 'retired':
+			return retiredBikeText(bikeName, totalMeters);
+		case 'stolen': {
+			const desc = [bikeInfo?.year, bikeInfo?.make, bikeInfo?.model].filter(Boolean).join(' ');
+			return desc
+				? `My ${bikeName} was stolen. ${desc}. If you see it, please reach out.`
+				: `My ${bikeName} was stolen. If you see it, please reach out.`;
+		}
+		case 'totaled':
+			return `${bikeName}, totaled at ${dist} ${unit}. Rest in pieces.\n\nTracked with Truing`;
+		default:
+			return retiredBikeText(bikeName, totalMeters);
+	}
+}
+
 export function retiredComponentText(
 	name: string,
 	totalMeters: number,
@@ -146,9 +180,28 @@ export async function shareText(text: string, photo?: Blob): Promise<boolean> {
 	if (isNative) {
 		try {
 			const { Share } = await import('@capacitor/share');
-			await Share.share({ text, dialogTitle: 'Share' });
+			if (photo) {
+				const { Filesystem, Directory } = await import('@capacitor/filesystem');
+				const reader = new FileReader();
+				const base64 = await new Promise<string>((resolve) => {
+					reader.onloadend = () => {
+						const result = reader.result as string;
+						resolve(result.split(',')[1]);
+					};
+					reader.readAsDataURL(photo);
+				});
+				const file = await Filesystem.writeFile({
+					path: 'share-photo.jpg',
+					data: base64,
+					directory: Directory.Cache
+				});
+				await Share.share({ text, files: [file.uri], dialogTitle: 'Share' });
+			} else {
+				await Share.share({ text, dialogTitle: 'Share' });
+			}
 			return true;
-		} catch {
+		} catch (err) {
+			console.error('Capacitor share failed:', err);
 			return false;
 		}
 	}
