@@ -137,7 +137,21 @@ export function retiredComponentText(
 }
 
 export async function shareText(text: string, photo?: Blob): Promise<boolean> {
-	if (typeof navigator === 'undefined') return false;
+	if (typeof window === 'undefined') return false;
+
+	const isNative = !!(
+		window as { Capacitor?: { isNativePlatform?: () => boolean } }
+	).Capacitor?.isNativePlatform?.();
+
+	if (isNative) {
+		try {
+			const { Share } = await import('@capacitor/share');
+			await Share.share({ text, dialogTitle: 'Share' });
+			return true;
+		} catch {
+			return false;
+		}
+	}
 
 	if (navigator.share) {
 		try {
