@@ -227,12 +227,6 @@
 				>
 					Import
 				</button>
-				<a
-					href={resolve('/rides/new')}
-					class="rounded-button bg-accent px-4 py-2 text-sm font-medium text-accent-fg"
-				>
-					Add a ride
-				</a>
 			</div>
 		{/if}
 	</header>

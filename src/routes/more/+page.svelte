@@ -2,6 +2,7 @@
 	import Settings from 'lucide-svelte/icons/settings';
 	import CircleHelp from 'lucide-svelte/icons/circle-help';
 	import Package from 'lucide-svelte/icons/package';
+	import Boxes from 'lucide-svelte/icons/boxes';
 	import Info from 'lucide-svelte/icons/info';
 	import Share2 from 'lucide-svelte/icons/share-2';
 	import { helpOpen } from '$lib/help/state';
@@ -61,6 +62,20 @@
 				<div>
 					<p class="font-medium">Parts Bin</p>
 					<p class="text-sm text-fg-muted">Uninstalled components waiting to go on a bike</p>
+				</div>
+			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		</li>
+		<li>
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<a
+				href="/packs"
+				class="flex items-center gap-4 rounded-card border border-border bg-surface-elevated px-4 py-3"
+			>
+				<Boxes size={20} class="shrink-0 text-fg-muted" />
+				<div>
+					<p class="font-medium">Data Packs</p>
+					<p class="text-sm text-fg-muted">Import component lists for specific bike builds</p>
 				</div>
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
