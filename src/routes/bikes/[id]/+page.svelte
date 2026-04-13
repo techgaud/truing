@@ -4,6 +4,8 @@
 	import { resolve } from '$app/paths';
 	import { liveQuery } from 'dexie';
 	import { db } from '$lib/db';
+	import { toast } from '$lib/toast';
+	import { retiredBikeText, bikeOdometer, shareText } from '$lib/share';
 	import serviceIntervals from '$lib/service_intervals.json';
 	import templatesData from '$lib/component_templates.json';
 
@@ -263,8 +265,14 @@
 		if (!confirm(`Archive ${$bike.name}? It will be hidden from the dashboard. Its history stays.`))
 			return;
 		try {
+			const totalMeters = await bikeOdometer(bikeId);
 			const now = new Date().toISOString();
 			await db.bikes.update(bikeId, { archived_at: now, updated_at: now });
+			const text = retiredBikeText($bike.name, totalMeters, $bike.purchase_date);
+			toast.success(`${$bike.name} archived.`, {
+				label: 'Share',
+				onclick: () => shareText(text)
+			});
 			goto(resolve('/bikes'));
 		} catch (err) {
 			alert(`Archive failed. ${err instanceof Error ? err.message : String(err)}`);

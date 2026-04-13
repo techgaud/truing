@@ -3,6 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { db, type BikeType } from '$lib/db';
 	import { parseDistanceToMeters, distanceLabel } from '$lib/units';
+	import { newBikeText, shareText } from '$lib/share';
+	import { toast } from '$lib/toast';
 
 	let name = $state('');
 	let type = $state<BikeType | ''>('');
@@ -40,6 +42,12 @@
 				created_at: now,
 				updated_at: now
 			});
+			const text = newBikeText(name.trim(), {
+				make: make.trim() || undefined,
+				model: model.trim() || undefined,
+				year: year === '' ? undefined : year
+			});
+			toast.success('Bike added!', { label: 'Share', onclick: () => shareText(text) });
 			await goto(resolve('/'));
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);

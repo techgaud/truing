@@ -3,6 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { db, type Component } from '$lib/db';
 	import { componentTypeLabel } from '$lib/intervals';
+	import { checkComponentShareable, shareText } from '$lib/share';
+	import { toast } from '$lib/toast';
 
 	const allBikes = liveQuery(() => db.bikes.filter((b) => !b.archived_at).toArray());
 
@@ -63,10 +65,17 @@
 	async function handleRetire(compId: number) {
 		if (!confirm('Retire this component? It will be removed from the parts bin permanently.'))
 			return;
+		const shareable = await checkComponentShareable(compId);
 		await db.components.update(compId, {
 			retired_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		});
+		if (shareable) {
+			toast.success('Component retired.', {
+				label: 'Share',
+				onclick: () => shareText(shareable.text)
+			});
+		}
 	}
 </script>
 

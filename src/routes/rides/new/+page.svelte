@@ -4,6 +4,8 @@
 	import { liveQuery } from 'dexie';
 	import { db } from '$lib/db';
 	import { parseDistanceToMeters, distanceLabel } from '$lib/units';
+	import { checkBikeMilestone, shareText, isSpecialMilestone } from '$lib/share';
+	import { toast } from '$lib/toast';
 
 	const METERS_PER_FOOT = 0.3048;
 
@@ -32,11 +34,12 @@
 			const now = new Date().toISOString();
 			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const startedAt = new Date(rideDate).toISOString();
+			const addedMeters = Math.round(parseDistanceToMeters(distanceMiles));
 			await db.rides.add({
 				bike_id: bikeId,
 				started_at: startedAt,
 				started_at_tz: tz,
-				distance_meters: Math.round(parseDistanceToMeters(distanceMiles)),
+				distance_meters: addedMeters,
 				duration_seconds: durationMinutes === '' ? undefined : Math.round(durationMinutes * 60),
 				elevation_gain_meters:
 					elevationFeet === '' ? null : Math.round(elevationFeet * METERS_PER_FOOT),
@@ -46,6 +49,20 @@
 				created_at: now,
 				updated_at: now
 			});
+			const milestone = await checkBikeMilestone(bikeId, addedMeters);
+			if (milestone) {
+				if (isSpecialMilestone(milestone.milestone)) {
+					toast.success(milestone.text.split('\n')[0], {
+						label: 'Share',
+						onclick: () => shareText(milestone.text)
+					});
+				} else {
+					toast.success(milestone.text.split('\n')[0], {
+						label: 'Share',
+						onclick: () => shareText(milestone.text)
+					});
+				}
+			}
 			await goto(resolve('/rides'));
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
