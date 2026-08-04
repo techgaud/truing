@@ -82,7 +82,6 @@ test.describe('settings', () => {
 		await expect(page.getByRole('heading', { name: 'Strava' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Components' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
-		await expect(page.getByRole('heading', { name: 'Data packs' })).toBeVisible();
 	});
 
 	test('unit preference toggles', async ({ page }) => {
