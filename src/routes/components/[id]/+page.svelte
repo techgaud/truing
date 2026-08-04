@@ -20,6 +20,7 @@
 		parseDistanceToMeters,
 		distanceLabel
 	} from '$lib/units';
+	import { formatDate } from '$lib/dates';
 
 	const componentId = $derived(Number(page.params.id));
 
@@ -197,14 +198,6 @@
 		} finally {
 			serviceSaving = false;
 		}
-	}
-
-	function formatDate(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric'
-		});
 	}
 
 	function progressColorClass(fraction: number): string {

@@ -10,6 +10,7 @@
 		parseDistanceToMeters,
 		distanceLabel
 	} from '$lib/units';
+	import { formatDate } from '$lib/dates';
 
 	const METERS_PER_FOOT = 0.3048;
 
@@ -79,14 +80,12 @@
 		}
 	}
 
-	function formatDate(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, {
-			weekday: 'long',
-			month: 'long',
-			day: 'numeric',
-			year: 'numeric'
-		});
-	}
+	const longDateOpts = {
+		weekday: 'long',
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric'
+	} as const;
 </script>
 
 <svelte:head>
@@ -107,7 +106,9 @@
 			<h1 class="mt-2 text-2xl font-semibold">
 				{formatDistance(ride.distance_meters)}
 			</h1>
-			<p class="text-fg-muted">{bike?.name ?? 'Unknown bike'} · {formatDate(ride.started_at)}</p>
+			<p class="text-fg-muted">
+				{bike?.name ?? 'Unknown bike'} · {formatDate(ride.started_at, longDateOpts)}
+			</p>
 		</header>
 
 		{#if !editing}
@@ -119,7 +120,7 @@
 					</div>
 					<div class="flex justify-between">
 						<dt class="text-fg-muted">Date</dt>
-						<dd>{formatDate(ride.started_at)}</dd>
+						<dd>{formatDate(ride.started_at, longDateOpts)}</dd>
 					</div>
 					{#if ride.duration_seconds != null}
 						<div class="flex justify-between">

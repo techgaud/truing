@@ -8,6 +8,7 @@
 	import { toast } from '$lib/toast';
 	import Fab from '$lib/components/Fab.svelte';
 	import { formatDistance } from '$lib/units';
+	import { formatDate } from '$lib/dates';
 	const SWIPE_THRESHOLD = 80;
 	const SWIPE_MAX = 120;
 	const UNDO_WINDOW_MS = 5000;
@@ -30,11 +31,6 @@
 	let dragDeltaX = $state(0);
 	let pendingDelete = $state<Ride | null>(null);
 	let pendingTimer: ReturnType<typeof setTimeout> | null = null;
-
-	function formatDate(iso: string): string {
-		const d = new Date(iso);
-		return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-	}
 
 	function transformFor(rideId: number): number {
 		if (draggingRideId === rideId) return Math.max(-SWIPE_MAX, Math.min(0, dragDeltaX));

@@ -32,6 +32,7 @@
 		parseDistanceToMeters,
 		distanceLabel
 	} from '$lib/units';
+	import { formatDate } from '$lib/dates';
 	import { formatCategory } from '$lib/intervals';
 	import { exportBikeAsPack } from '$lib/packs';
 	import ActionMenu from '$lib/components/ActionMenu.svelte';
@@ -434,11 +435,7 @@
 					{retireReasonLabel($bike.archive_reason)}
 				</p>
 				<p class="mt-1 text-xs text-fg-muted">
-					{new Date($bike.archived_at).toLocaleDateString(undefined, {
-						month: 'short',
-						day: 'numeric',
-						year: 'numeric'
-					})}
+					{formatDate($bike.archived_at)}
 				</p>
 				{#if $bike.sale_price_cents}
 					<p class="mt-1 text-xs text-fg-muted">
@@ -522,11 +519,7 @@
 					<div>
 						<p class="text-fg-muted">Purchased</p>
 						<p>
-							{new Date($bike.purchase_date).toLocaleDateString(undefined, {
-								month: 'short',
-								day: 'numeric',
-								year: 'numeric'
-							})}
+							{formatDate($bike.purchase_date)}
 						</p>
 					</div>
 				{/if}
@@ -670,11 +663,7 @@
 										{formatDistance(ride.distance_meters)}
 									</p>
 									<p class="text-sm text-fg-muted">
-										{new Date(ride.started_at).toLocaleDateString(undefined, {
-											month: 'short',
-											day: 'numeric',
-											year: 'numeric'
-										})}
+										{formatDate(ride.started_at)}
 									</p>
 								</div>
 								<span
