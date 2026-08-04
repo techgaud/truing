@@ -67,6 +67,34 @@ describe('importAll replace mode', () => {
 		expect(await db.bikes.count()).toBe(1);
 	});
 
+	it('skips malformed records and reports an honest skipped count', async () => {
+		const backup = JSON.stringify({
+			schema_version: 1,
+			bikes: [
+				{
+					name: 'Good Bike',
+					starting_odometer_meters: 0,
+					created_at: '2026-01-01T00:00:00Z',
+					updated_at: '2026-01-01T00:00:00Z'
+				},
+				// missing name and starting_odometer_meters: must be skipped, not stored
+				{ make: 'Ghost', created_at: '2026-01-01T00:00:00Z' },
+				'not even an object'
+			],
+			components: [],
+			installations: [],
+			rides: [],
+			service_log: []
+		});
+
+		const result = await importAll(backup, 'replace');
+		expect(result.bikes.added).toBe(1);
+		expect(result.bikes.skipped).toBe(2);
+		expect(await db.bikes.count()).toBe(1);
+		const stored = await db.bikes.toArray();
+		expect(stored[0]?.name).toBe('Good Bike');
+	});
+
 	it('rejects invalid backup file', async () => {
 		await expect(importAll('{}')).rejects.toThrow('schema_version');
 	});
