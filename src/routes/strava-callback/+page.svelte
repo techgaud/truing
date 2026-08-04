@@ -3,10 +3,13 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { db } from '$lib/db';
-	import { encryptField, decryptField, hasSessionKey } from '$lib/crypto';
+	import { encryptField, decryptField, hasSessionKey, unlockWithPassphrase } from '$lib/crypto';
 
 	let status = $state('Connecting to Strava…');
 	let failed = $state(false);
+	let needsPassphrase = $state(false);
+	let passphrase = $state('');
+	let unlocking = $state(false);
 
 	async function exchangeToken() {
 		const code = page.url.searchParams.get('code');
@@ -23,13 +26,16 @@
 			return;
 		}
 
+		// Connecting to Strava is a full-page redirect to strava.com and back,
+		// which clears the in-memory encryption key. Instead of dead-ending in a
+		// loop, re-derive the key from the passphrase right here, then continue.
+		if (!hasSessionKey()) {
+			needsPassphrase = true;
+			status = 'Enter your passphrase to finish connecting.';
+			return;
+		}
+
 		try {
-			if (!hasSessionKey()) {
-				status =
-					'Encryption key not loaded. Open Settings and enter your passphrase, then try connecting again.';
-				failed = true;
-				return;
-			}
 			const clientSecret = await decryptField(auth.client_secret);
 			const body = new URLSearchParams({
 				client_id: auth.client_id,
@@ -38,14 +44,22 @@
 				grant_type: 'authorization_code'
 			});
 
-			const response = await fetch('/api/strava/token', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				body: body.toString()
-			});
+			let response: Response;
+			try {
+				response = await fetch('/api/strava/token', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body: body.toString()
+				});
+			} catch {
+				status =
+					'Could not reach the Strava token service. Check your connection, then try again from Settings.';
+				failed = true;
+				return;
+			}
 
 			if (!response.ok) {
-				status = `Strava returned an error (${response.status}). Try again from Settings.`;
+				status = `The Strava token service returned an error (${response.status}). Try again from Settings.`;
 				failed = true;
 				return;
 			}
@@ -74,6 +88,24 @@
 		}
 	}
 
+	async function handleUnlock(e: SubmitEvent) {
+		e.preventDefault();
+		if (unlocking || passphrase.length === 0) return;
+		unlocking = true;
+		try {
+			await unlockWithPassphrase(passphrase);
+			passphrase = '';
+			needsPassphrase = false;
+			failed = false;
+			status = 'Connecting to Strava…';
+			await exchangeToken();
+		} catch (err) {
+			status = `Could not unlock. ${err instanceof Error ? err.message : String(err)}`;
+		} finally {
+			unlocking = false;
+		}
+	}
+
 	exchangeToken();
 </script>
 
@@ -85,6 +117,28 @@
 	class="mx-auto flex min-h-[60dvh] max-w-md flex-col items-center justify-center px-6 text-center"
 >
 	<p class="text-lg font-semibold">{status}</p>
+
+	{#if needsPassphrase}
+		<form onsubmit={handleUnlock} class="mt-6 w-full max-w-xs">
+			<label for="cb-passphrase" class="sr-only">Passphrase</label>
+			<input
+				id="cb-passphrase"
+				type="password"
+				autocomplete="current-password"
+				bind:value={passphrase}
+				placeholder="Passphrase"
+				class="w-full rounded-button border border-border bg-surface-elevated px-3 py-2 text-center"
+			/>
+			<button
+				type="submit"
+				disabled={unlocking || passphrase.length === 0}
+				class="mt-3 w-full rounded-button bg-accent px-5 py-2 font-medium text-accent-fg disabled:opacity-50"
+			>
+				{unlocking ? 'Unlocking…' : 'Finish connecting'}
+			</button>
+		</form>
+	{/if}
+
 	{#if failed}
 		<a href={resolve('/settings')} class="mt-6 text-accent">Back to Settings</a>
 	{/if}
