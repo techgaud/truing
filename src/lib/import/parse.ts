@@ -62,7 +62,7 @@ async function parseFIT(buffer: ArrayBuffer): Promise<ParsedRide> {
 
 	return {
 		distance_meters: Math.round(session.total_distance ?? 0),
-		started_at: session.start_time ?? new Date().toISOString(),
+		started_at: toIsoString(session.start_time),
 		duration_seconds:
 			session.total_elapsed_time != null ? Math.round(session.total_elapsed_time) : undefined,
 		elevation_gain_meters:
@@ -70,6 +70,27 @@ async function parseFIT(buffer: ArrayBuffer): Promise<ParsedRide> {
 		source: 'fit',
 		external_id: await hashContent(buffer)
 	};
+}
+
+// Boundary guard. fit-file-parser's own .d.ts declares session.start_time as a
+// string, but at runtime the library returns a JS Date object (see
+// node_modules/fit-file-parser/dist/binary.js). The rest of the app requires an
+// ISO string in started_at, so we normalize here at the parse door and reject
+// anything that is neither a Date nor a parseable string. This keeps a future
+// parser change from ever storing a Date and silently corrupting wear math.
+function toIsoString(value: unknown): string {
+	if (value == null) return new Date().toISOString();
+	if (value instanceof Date) {
+		const ms = value.getTime();
+		if (Number.isNaN(ms)) throw new Error('FIT file has an invalid start time.');
+		return value.toISOString();
+	}
+	if (typeof value === 'string') {
+		const ms = Date.parse(value);
+		if (Number.isNaN(ms)) throw new Error('FIT file has an invalid start time.');
+		return new Date(ms).toISOString();
+	}
+	throw new Error('FIT file has an unrecognized start time.');
 }
 
 async function hashContent(content: string | ArrayBuffer): Promise<string> {
