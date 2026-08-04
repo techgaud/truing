@@ -59,6 +59,21 @@ async function getAccessToken(): Promise<string | null> {
 	return data.access_token;
 }
 
+// Strava's activity feed mixes runs, hikes, and walks in with rides. Only
+// cycling activity types belong on a bike, or a runner-cyclist's every run
+// lands on their bike and inflates component wear.
+const CYCLING_ACTIVITY_TYPES = new Set([
+	'Ride',
+	'VirtualRide',
+	'GravelRide',
+	'MountainBikeRide',
+	'EBikeRide'
+]);
+
+export function isCyclingActivity(type: string): boolean {
+	return CYCLING_ACTIVITY_TYPES.has(type);
+}
+
 type StravaActivity = {
 	id: number;
 	name: string;
@@ -126,6 +141,10 @@ export async function syncStrava(): Promise<SyncResult> {
 	let skipped = 0;
 
 	for (const activity of activities) {
+		if (!isCyclingActivity(activity.type)) {
+			skipped++;
+			continue;
+		}
 		const externalId = String(activity.id);
 		const existing = await db.rides.where({ external_id: externalId }).first();
 		if (existing) {
