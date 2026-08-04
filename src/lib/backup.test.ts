@@ -157,6 +157,143 @@ describe('importAll merge mode', () => {
 		expect(await db.rides.count()).toBe(1);
 	});
 
+	it('merges a second-device backup whose primary keys collide, remapping ids', async () => {
+		// Local database already occupies ids 1 for a bike, component, and
+		// installation. A backup from another device carries its OWN id 1s.
+		const localBikeId = (await db.bikes.add({
+			name: 'Local Bike',
+			starting_odometer_meters: 0,
+			created_at: '2026-01-01T00:00:00Z',
+			updated_at: '2026-01-01T00:00:00Z'
+		})) as number;
+		const localCompId = (await db.components.add({
+			type: 'chain_11sp',
+			initial_wear_meters: 0,
+			created_at: '2026-01-01T00:00:00Z',
+			updated_at: '2026-01-01T00:00:00Z'
+		})) as number;
+		await db.installations.add({
+			component_id: localCompId,
+			bike_id: localBikeId,
+			installed_at: '2026-01-01T00:00:00Z',
+			installed_at_tz: 'UTC',
+			created_at: '2026-01-01T00:00:00Z',
+			updated_at: '2026-01-01T00:00:00Z'
+		});
+
+		const backup = JSON.stringify({
+			schema_version: 1,
+			bikes: [
+				{
+					id: 1,
+					name: 'Road Bike',
+					starting_odometer_meters: 0,
+					created_at: '2026-02-01T00:00:00Z',
+					updated_at: '2026-02-01T00:00:00Z'
+				}
+			],
+			components: [
+				{
+					id: 1,
+					type: 'chain_12sp',
+					initial_wear_meters: 0,
+					created_at: '2026-02-01T00:00:00Z',
+					updated_at: '2026-02-01T00:00:00Z'
+				}
+			],
+			installations: [
+				{
+					id: 1,
+					component_id: 1,
+					bike_id: 1,
+					installed_at: '2026-02-01T00:00:00Z',
+					installed_at_tz: 'UTC',
+					created_at: '2026-02-01T00:00:00Z',
+					updated_at: '2026-02-01T00:00:00Z'
+				}
+			],
+			rides: [
+				{
+					id: 1,
+					bike_id: 1,
+					started_at: '2026-02-10T00:00:00Z',
+					started_at_tz: 'UTC',
+					distance_meters: 40000,
+					conditions: [],
+					source: 'manual',
+					created_at: '2026-02-10T00:00:00Z',
+					updated_at: '2026-02-10T00:00:00Z'
+				}
+			],
+			service_log: []
+		});
+
+		// Before the id remap this threw a ConstraintError and aborted the whole
+		// merge. It must now complete and add everything.
+		const result = await importAll(backup, 'merge');
+		expect(result.bikes.added).toBe(1);
+		expect(result.components.added).toBe(1);
+		expect(result.rides.added).toBe(1);
+		expect(await db.bikes.count()).toBe(2);
+		expect(await db.installations.count()).toBe(2);
+
+		// The imported ride and installation follow the imported bike/component,
+		// not the local id-1 rows.
+		const roadBike = await db.bikes.where({ name: 'Road Bike' }).first();
+		expect(roadBike?.id).toBeDefined();
+		const importedRides = await db.rides.where({ bike_id: roadBike!.id! }).toArray();
+		expect(importedRides).toHaveLength(1);
+		const importedInstalls = await db.installations.where({ bike_id: roadBike!.id! }).toArray();
+		expect(importedInstalls).toHaveLength(1);
+		expect(importedInstalls[0]!.component_id).not.toBe(localCompId);
+	});
+
+	it('remaps rides onto a name-matched existing bike', async () => {
+		const localBikeId = (await db.bikes.add({
+			name: 'Commuter',
+			starting_odometer_meters: 0,
+			created_at: '2026-01-01T00:00:00Z',
+			updated_at: '2026-01-01T00:00:00Z'
+		})) as number;
+
+		// Backup's bike uses a different id (7) but the same name, so it dedupes.
+		// Its ride references bike_id 7 and must land on the local Commuter.
+		const backup = JSON.stringify({
+			schema_version: 1,
+			bikes: [
+				{
+					id: 7,
+					name: 'Commuter',
+					starting_odometer_meters: 0,
+					created_at: '2026-01-01T00:00:00Z',
+					updated_at: '2026-01-01T00:00:00Z'
+				}
+			],
+			components: [],
+			installations: [],
+			rides: [
+				{
+					id: 3,
+					bike_id: 7,
+					started_at: '2026-04-01T00:00:00Z',
+					started_at_tz: 'UTC',
+					distance_meters: 12000,
+					conditions: [],
+					source: 'manual',
+					created_at: '2026-04-01T00:00:00Z',
+					updated_at: '2026-04-01T00:00:00Z'
+				}
+			],
+			service_log: []
+		});
+
+		const result = await importAll(backup, 'merge');
+		expect(result.bikes.skipped).toBe(1);
+		expect(result.rides.added).toBe(1);
+		const rides = await db.rides.where({ bike_id: localBikeId }).toArray();
+		expect(rides).toHaveLength(1);
+	});
+
 	it('adds new rides that do not match existing', async () => {
 		const backup = JSON.stringify({
 			schema_version: 1,

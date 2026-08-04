@@ -1,5 +1,21 @@
-import { db, type Bike, type Ride, type Component, type ServiceLogEntry } from './db';
+import {
+	db,
+	type Bike,
+	type Ride,
+	type Component,
+	type ServiceLogEntry,
+	type Installation
+} from './db';
 import { APP_VERSION } from './version';
+
+// Drop a record's own primary key so Dexie assigns a fresh one on add. Reusing
+// the exported key across databases either collides (ConstraintError) or
+// silently overwrites an unrelated local row.
+function withoutId<T extends { id?: number }>(record: T): T {
+	const copy = { ...record };
+	delete copy.id;
+	return copy;
+}
 
 async function sha256(text: string): Promise<string> {
 	const buffer = new TextEncoder().encode(text);
@@ -151,7 +167,7 @@ async function importMerge(data: Record<string, unknown>): Promise<ImportResult>
 
 	const importBikes = (data.bikes as Bike[]) ?? [];
 	const importComponents = (data.components as Component[]) ?? [];
-	const importInstallations = (data.installations as unknown[]) ?? [];
+	const importInstallations = (data.installations as Installation[]) ?? [];
 	const importRides = (data.rides as Ride[]) ?? [];
 	const importServiceLog = (data.service_log as ServiceLogEntry[]) ?? [];
 
@@ -161,17 +177,45 @@ async function importMerge(data: Record<string, unknown>): Promise<ImportResult>
 		async () => {
 			const existingBikes = await db.bikes.toArray();
 
+			// Every foreign key from the backup is rewritten through these maps, so
+			// rides and installations follow their real bike and component into the
+			// local database instead of latching onto whatever local row happens to
+			// share the exported id.
+			const bikeIdMap = new Map<number, number>();
+			const componentIdMap = new Map<number, number>();
+
 			for (const bike of importBikes) {
+				const oldId = bike.id;
 				const match = existingBikes.find((b) => b.name.toLowerCase() === bike.name.toLowerCase());
-				if (match) {
+				if (match && match.id !== undefined) {
+					if (oldId !== undefined) bikeIdMap.set(oldId, match.id);
 					result.bikes.skipped++;
 				} else {
-					await db.bikes.add(bike);
+					const newId = await db.bikes.add(withoutId(bike));
+					if (oldId !== undefined) bikeIdMap.set(oldId, newId);
 					result.bikes.added++;
 				}
 			}
 
+			for (const comp of importComponents) {
+				const oldId = comp.id;
+				const newId = await db.components.add(withoutId(comp));
+				if (oldId !== undefined) componentIdMap.set(oldId, newId);
+				result.components.added++;
+			}
+
+			for (const inst of importInstallations) {
+				await db.installations.add(
+					withoutId({
+						...inst,
+						bike_id: bikeIdMap.get(inst.bike_id) ?? inst.bike_id,
+						component_id: componentIdMap.get(inst.component_id) ?? inst.component_id
+					})
+				);
+			}
+
 			for (const ride of importRides) {
+				const bikeId = bikeIdMap.get(ride.bike_id) ?? ride.bike_id;
 				if (ride.external_id) {
 					const existing = await db.rides.where({ external_id: ride.external_id }).first();
 					if (existing) {
@@ -180,7 +224,7 @@ async function importMerge(data: Record<string, unknown>): Promise<ImportResult>
 					}
 				} else {
 					const sameDay = await db.rides
-						.where({ bike_id: ride.bike_id })
+						.where({ bike_id: bikeId })
 						.filter(
 							(r) =>
 								r.started_at.slice(0, 10) === ride.started_at.slice(0, 10) &&
@@ -194,13 +238,15 @@ async function importMerge(data: Record<string, unknown>): Promise<ImportResult>
 						continue;
 					}
 				}
-				await db.rides.add(ride);
+				await db.rides.add(withoutId({ ...ride, bike_id: bikeId }));
 				result.rides.added++;
 			}
 
 			for (const entry of importServiceLog) {
+				const componentId = componentIdMap.get(entry.component_id) ?? entry.component_id;
+				const bikeId = bikeIdMap.get(entry.bike_id) ?? entry.bike_id;
 				const existing = await db.service_log
-					.where({ component_id: entry.component_id })
+					.where({ component_id: componentId })
 					.filter(
 						(s) =>
 							s.performed_at.slice(0, 10) === entry.performed_at.slice(0, 10) &&
@@ -210,18 +256,11 @@ async function importMerge(data: Record<string, unknown>): Promise<ImportResult>
 				if (existing) {
 					result.serviceLog.skipped++;
 				} else {
-					await db.service_log.add(entry);
+					await db.service_log.add(
+						withoutId({ ...entry, component_id: componentId, bike_id: bikeId })
+					);
 					result.serviceLog.added++;
 				}
-			}
-
-			for (const comp of importComponents) {
-				result.components.added++;
-				await db.components.add(comp);
-			}
-
-			for (const inst of importInstallations) {
-				await db.installations.add(inst as never);
 			}
 		}
 	);
