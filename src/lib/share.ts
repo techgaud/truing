@@ -301,7 +301,8 @@ export async function checkComponentShareable(
 	if (wearMeters < minMeters) return null;
 
 	const installations = await db.installations.where({ component_id: componentId }).toArray();
-	const lastInstall = installations.find((i) => i.removed_at || !i.removed_at);
+	const lastInstall =
+		installations.find((i) => !i.removed_at) ?? installations[installations.length - 1];
 	let bikeName: string | undefined;
 	if (lastInstall) {
 		const bike = await db.bikes.get(lastInstall.bike_id);
