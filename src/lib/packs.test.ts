@@ -72,7 +72,7 @@ describe('findNewCustomTypes', () => {
 		});
 		const newTypes = findNewCustomTypes(pack);
 		expect(newTypes).toHaveLength(1);
-		expect(newTypes[0].type).toBe('custom_widget_xyz');
+		expect(newTypes[0]?.type).toBe('custom_widget_xyz');
 	});
 });
 
@@ -90,11 +90,11 @@ describe('applyPack', () => {
 
 		const components = await db.components.toArray();
 		expect(components).toHaveLength(1);
-		expect(components[0].name).toBe('Shimano CN-HG601');
+		expect(components[0]?.name).toBe('Shimano CN-HG601');
 
 		const installations = await db.installations.toArray();
 		expect(installations).toHaveLength(1);
-		expect(installations[0].bike_id).toBe(bikeId);
+		expect(installations[0]?.bike_id).toBe(bikeId);
 	});
 
 	it('skips duplicate component types on same bike', async () => {

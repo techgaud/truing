@@ -7,10 +7,11 @@
 		warning: 'border-warning bg-surface-elevated',
 		info: 'border-border bg-surface-elevated'
 	};
+
+	const current = $derived($toasts[0]);
 </script>
 
-{#if $toasts.length > 0}
-	{@const current = $toasts[0]}
+{#if current}
 	<div
 		role="status"
 		aria-live={current.type === 'error' ? 'assertive' : 'polite'}

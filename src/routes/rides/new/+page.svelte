@@ -52,12 +52,12 @@
 			const milestone = await checkBikeMilestone(bikeId, addedMeters);
 			if (milestone) {
 				if (isSpecialMilestone(milestone.milestone)) {
-					toast.success(milestone.text.split('\n')[0], {
+					toast.success(milestone.text.split('\n')[0] ?? milestone.text, {
 						label: 'Share',
 						onclick: () => shareText(milestone.text)
 					});
 				} else {
-					toast.success(milestone.text.split('\n')[0], {
+					toast.success(milestone.text.split('\n')[0] ?? milestone.text, {
 						label: 'Share',
 						onclick: () => shareText(milestone.text)
 					});

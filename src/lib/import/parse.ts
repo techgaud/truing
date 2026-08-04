@@ -4,8 +4,8 @@ import gpxParser from 'gpxparser';
 export type ParsedRide = {
 	distance_meters: number;
 	started_at: string;
-	duration_seconds?: number;
-	elevation_gain_meters?: number;
+	duration_seconds?: number | undefined;
+	elevation_gain_meters?: number | undefined;
 	source: 'gpx' | 'fit';
 	external_id: string;
 };
@@ -29,8 +29,12 @@ async function parseGPX(text: string): Promise<ParsedRide> {
 	const track = gpx.tracks[0];
 	if (!track || track.points.length === 0) throw new Error('No tracks found in GPX file.');
 
-	const startTime = track.points[0].time;
-	const endTime = track.points[track.points.length - 1].time;
+	const firstPoint = track.points[0];
+	const lastPoint = track.points[track.points.length - 1];
+	if (!firstPoint || !lastPoint) throw new Error('No tracks found in GPX file.');
+
+	const startTime = firstPoint.time;
+	const endTime = lastPoint.time;
 	const duration =
 		startTime && endTime ? (endTime.getTime() - startTime.getTime()) / 1000 : undefined;
 

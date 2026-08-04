@@ -121,8 +121,7 @@ export async function runNotificationCheck(): Promise<void> {
 	const now = Date.now();
 	const todayIso = new Date(now).toISOString();
 
-	for (let idx = 0; idx < active.length; idx++) {
-		const inst = active[idx];
+	for (const [idx, inst] of active.entries()) {
 		const component = components[idx];
 		if (!component || component.id === undefined || component.retired_at) continue;
 		const bike = bikeById[inst.bike_id];

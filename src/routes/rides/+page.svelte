@@ -157,7 +157,9 @@
 					if (existing) continue;
 
 					const bikeId =
-						activeBikes.length === 1 ? activeBikes[0].id! : await pickBike(activeBikes, file.name);
+						activeBikes.length === 1
+							? (activeBikes[0]?.id ?? null)
+							: await pickBike(activeBikes, file.name);
 					if (bikeId === null) continue;
 
 					const now = new Date().toISOString();
@@ -192,7 +194,7 @@
 		const choice = prompt(`Which bike for ${fileName}?\n\n${names}\n\nEnter the number.`);
 		if (!choice) return Promise.resolve(null);
 		const idx = parseInt(choice, 10) - 1;
-		if (idx >= 0 && idx < bikes.length) return Promise.resolve(bikes[idx].id!);
+		if (idx >= 0 && idx < bikes.length) return Promise.resolve(bikes[idx]?.id ?? null);
 		return Promise.resolve(null);
 	}
 </script>

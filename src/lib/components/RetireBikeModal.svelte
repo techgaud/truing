@@ -16,9 +16,11 @@
 	}: {
 		bikeId: number;
 		bikeName: string;
-		bikeInfo?: { make?: string; model?: string; year?: number };
-		bikePhoto?: Blob | null;
-		installed?: Array<{ installation: Installation; component: Component | undefined }>;
+		bikeInfo?:
+			| { make?: string | undefined; model?: string | undefined; year?: number | undefined }
+			| undefined;
+		bikePhoto?: Blob | null | undefined;
+		installed?: Array<{ installation: Installation; component: Component | undefined }> | undefined;
 		onclose: () => void;
 	} = $props();
 
@@ -111,9 +113,10 @@
 			}
 
 			if (reason === 'stripped' && installed) {
-				for (let i = 0; i < installed.length; i++) {
-					if (stripChecked[i] && installed[i].installation?.id) {
-						await db.installations.update(installed[i].installation.id!, {
+				for (const [i, item] of installed.entries()) {
+					const installationId = item.installation?.id;
+					if (stripChecked[i] && installationId !== undefined) {
+						await db.installations.update(installationId, {
 							removed_at: now,
 							updated_at: now
 						});

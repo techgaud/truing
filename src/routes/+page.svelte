@@ -67,8 +67,7 @@
 		const now = Date.now();
 		const todayIso = new Date(now).toISOString();
 		const rows: Row[] = [];
-		for (let idx = 0; idx < activeInstallations.length; idx++) {
-			const inst = activeInstallations[idx];
+		for (const [idx, inst] of activeInstallations.entries()) {
 			const component = components[idx];
 			if (!component || component.id === undefined || component.retired_at) continue;
 			const bike = bikeById[inst.bike_id];

@@ -86,12 +86,12 @@
 	type BikeWithStats = {
 		id: number;
 		name: string;
-		type?: BikeType;
-		make?: string;
-		model?: string;
-		year?: number;
-		purchase_date?: string;
-		archived_at?: string | null;
+		type?: BikeType | undefined;
+		make?: string | undefined;
+		model?: string | undefined;
+		year?: number | undefined;
+		purchase_date?: string | undefined;
+		archived_at?: string | null | undefined;
 		odometerMeters: number;
 		rideCount: number;
 	};
@@ -160,7 +160,7 @@
 
 	function openInstallModal(compId: number) {
 		installCompId = compId;
-		installBikeId = activeBikes.length === 1 ? activeBikes[0].id! : '';
+		installBikeId = activeBikes.length === 1 ? (activeBikes[0]?.id ?? '') : '';
 		installDate = todayISO();
 		installSaving = false;
 	}

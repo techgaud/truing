@@ -2,14 +2,19 @@ import Dexie, { type Table } from 'dexie';
 
 export type BikeType = 'road' | 'gravel' | 'mtb' | 'commuter' | 'ebike' | 'touring' | 'other';
 
+// Under exactOptionalPropertyTypes, a plain `foo?: T` field rejects an explicit
+// `undefined`. These records are built from optional form inputs where "left
+// blank" is written as `value || undefined`, and for every field below absence
+// and undefined mean the same thing, so the optional fields spell out
+// `| undefined` to say so.
 export interface Bike {
 	id?: number;
 	name: string;
-	make?: string;
-	model?: string;
-	year?: number;
-	type?: BikeType;
-	purchase_date?: string;
+	make?: string | undefined;
+	model?: string | undefined;
+	year?: number | undefined;
+	type?: BikeType | undefined;
+	purchase_date?: string | undefined;
 	purchase_price_cents?: number | null;
 	purchase_currency?: string | null;
 	starting_odometer_meters: number;
@@ -17,7 +22,7 @@ export interface Bike {
 	archive_reason?: string | null;
 	sale_price_cents?: number | null;
 	sale_currency?: string | null;
-	notes?: string;
+	notes?: string | undefined;
 	photo_blob?: Blob | null;
 	strava_gear_id?: string | null;
 	created_at: string;
@@ -27,7 +32,7 @@ export interface Bike {
 export interface Component {
 	id?: number;
 	type: string;
-	name?: string;
+	name?: string | undefined;
 	initial_wear_meters: number;
 	retired_at?: string | null;
 	replaced_by_component_id?: number | null;
@@ -38,7 +43,7 @@ export interface Component {
 	purchase_currency?: string | null;
 	notification_threshold_pct?: number | null;
 	notified_thresholds?: number[];
-	notes?: string;
+	notes?: string | undefined;
 	created_at: string;
 	updated_at: string;
 }
@@ -51,7 +56,7 @@ export interface Installation {
 	installed_at_tz: string;
 	removed_at?: string | null;
 	removed_at_tz?: string | null;
-	notes?: string;
+	notes?: string | undefined;
 	created_at: string;
 	updated_at: string;
 }
@@ -64,12 +69,12 @@ export interface Ride {
 	started_at: string;
 	started_at_tz: string;
 	distance_meters: number;
-	duration_seconds?: number;
+	duration_seconds?: number | undefined;
 	elevation_gain_meters?: number | null;
 	conditions: string[];
 	source: RideSource;
 	external_id?: string | null;
-	notes?: string;
+	notes?: string | undefined;
 	created_at: string;
 	updated_at: string;
 }
@@ -83,9 +88,9 @@ export interface ServiceLogEntry {
 	performed_at: string;
 	performed_at_tz: string;
 	action: ServiceAction;
-	service_type?: string;
-	odometer_meters_at_service?: number;
-	notes?: string;
+	service_type?: string | undefined;
+	odometer_meters_at_service?: number | undefined;
+	notes?: string | undefined;
 	created_at: string;
 	updated_at: string;
 }
@@ -99,7 +104,7 @@ export interface CustomComponentType {
 	default_inspection_distance_meters?: number | null;
 	default_inspection_time_days?: number | null;
 	default_wear_multipliers?: Record<string, number> | null;
-	notes?: string;
+	notes?: string | undefined;
 	created_at: string;
 	updated_at: string;
 }
@@ -130,8 +135,8 @@ export interface ErrorLogEntry {
 	timestamp: string;
 	code: string;
 	message: string;
-	context?: Record<string, unknown>;
-	stack?: string;
+	context?: Record<string, unknown> | undefined;
+	stack?: string | undefined;
 	user_agent: string;
 	app_version: string;
 }

@@ -377,7 +377,7 @@
 	async function handleApplyTemplate() {
 		if (templateSaving || !currentTemplate) return;
 		const selectedEntries = currentTemplate.components
-			.map((entry, i) => ({ entry, dateStr: templateDates[i] }))
+			.map((entry, i) => ({ entry, dateStr: templateDates[i] ?? templateDefaultDate }))
 			.filter((_, i) => templateChecked[i]);
 		if (selectedEntries.length === 0) {
 			templateError = 'Select at least one component.';

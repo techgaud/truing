@@ -7,7 +7,7 @@ export type Toast = {
 	type: ToastType;
 	message: string;
 	duration: number;
-	action?: { label: string; onclick: () => void };
+	action?: { label: string; onclick: () => void } | undefined;
 };
 
 let nextId = 0;

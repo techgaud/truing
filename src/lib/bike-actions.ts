@@ -64,9 +64,9 @@ export function bikeActions(
 	isArchived: boolean,
 	callbacks: {
 		onRetire: () => void;
-		onExportPack?: () => void;
-		onReactivate?: () => void;
-		onDelete?: () => void;
+		onExportPack?: (() => void) | undefined;
+		onReactivate?: (() => void) | undefined;
+		onDelete?: (() => void) | undefined;
 	}
 ): Array<{ label: string; onclick: () => void; danger?: boolean }> {
 	if (isArchived) {

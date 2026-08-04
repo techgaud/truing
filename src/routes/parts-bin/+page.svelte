@@ -35,7 +35,8 @@
 	function openInstallModal(compId: number) {
 		const bikes = $allBikes ?? [];
 		installCompId = compId;
-		installBikeId = bikes.length === 1 && bikes[0].id !== undefined ? bikes[0].id : '';
+		const only = bikes.length === 1 ? bikes[0] : undefined;
+		installBikeId = only?.id ?? '';
 		installDate = todayISO();
 		installSaving = false;
 	}

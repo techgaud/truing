@@ -112,7 +112,12 @@ export async function applyPack(
 
 export function exportBikeAsPack(
 	bikeName: string,
-	bikeInfo: { make?: string; model?: string; year?: number; type?: string },
+	bikeInfo: {
+		make?: string | undefined;
+		model?: string | undefined;
+		year?: number | undefined;
+		type?: string | undefined;
+	},
 	components: Array<{
 		type: string;
 		name: string;

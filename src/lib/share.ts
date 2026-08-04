@@ -93,7 +93,9 @@ export function milestoneText(bikeName: string, milestone: number): string {
 
 export function newBikeText(
 	bikeName: string,
-	bikeInfo?: { make?: string; model?: string; year?: number }
+	bikeInfo?:
+		| { make?: string | undefined; model?: string | undefined; year?: number | undefined }
+		| undefined
 ): string {
 	if (bikeInfo?.year && bikeInfo?.make && bikeInfo?.model) {
 		return `New bike day. ${bikeInfo.year} ${bikeInfo.make} ${bikeInfo.model}.\n\nTracked with Truing`;
@@ -122,7 +124,9 @@ export function archiveShareText(
 	reason: string,
 	bikeName: string,
 	totalMeters: number,
-	bikeInfo?: { make?: string; model?: string; year?: number },
+	bikeInfo?:
+		| { make?: string | undefined; model?: string | undefined; year?: number | undefined }
+		| undefined,
 	tradedForName?: string
 ): string {
 	const dist = formatMilestone(Math.round(metersToDisplayUnit(totalMeters)));
@@ -187,7 +191,7 @@ export async function shareText(text: string, photo?: Blob): Promise<boolean> {
 				const base64 = await new Promise<string>((resolve) => {
 					reader.onloadend = () => {
 						const result = reader.result as string;
-						resolve(result.split(',')[1]);
+						resolve(result.split(',')[1] ?? '');
 					};
 					reader.readAsDataURL(photo);
 				});
