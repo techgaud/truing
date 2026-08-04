@@ -10,7 +10,10 @@
 		inspectionTimeDays,
 		componentLabel,
 		componentTypeLabel,
-		loadCustomTypes
+		loadCustomTypes,
+		loadServicedDates,
+		daysSinceTimeBasis,
+		timeIntervalFraction
 	} from '$lib/intervals';
 	import { formatDistance, metersToDisplayUnit, distanceLabel } from '$lib/units';
 	import { runNotificationCheck } from '$lib/notifications';
@@ -57,8 +60,12 @@
 		if (activeInstallations.length === 0) return { status: 'no_components' };
 
 		const components = await db.components.bulkGet(activeInstallations.map((i) => i.component_id));
+		const servicedByComponent = await loadServicedDates(
+			components.filter((c): c is Component => !!c && c.id !== undefined).map((c) => c.id!)
+		);
 
 		const now = Date.now();
+		const todayIso = new Date(now).toISOString();
 		const rows: Row[] = [];
 		for (let idx = 0; idx < activeInstallations.length; idx++) {
 			const inst = activeInstallations[idx];
@@ -70,18 +77,22 @@
 			const wearMeters = await componentWear(component.id);
 			const distInterval = replacementDistanceMeters(component);
 			const timeInterval = replacementTimeDays(component);
+			const serviced = servicedByComponent[component.id] ?? [];
 
 			const distanceFraction =
 				distInterval != null && distInterval > 0 ? wearMeters / distInterval : null;
-			const daysSinceInstall = (now - Date.parse(inst.installed_at)) / 86_400_000;
-			const timeFraction =
-				timeInterval != null && timeInterval > 0 ? daysSinceInstall / timeInterval : null;
+			const daysSinceBasis = daysSinceTimeBasis(inst.installed_at, serviced, todayIso);
+			const timeFraction = timeIntervalFraction(
+				inst.installed_at,
+				serviced,
+				timeInterval,
+				todayIso
+			);
 			const urgencyFraction = Math.max(distanceFraction ?? 0, timeFraction ?? 0);
 
 			const remainingMi =
 				distInterval != null ? Math.round(metersToDisplayUnit(distInterval - wearMeters)) : null;
-			const remainingDays =
-				timeInterval != null ? Math.round(timeInterval - daysSinceInstall) : null;
+			const remainingDays = timeInterval != null ? Math.round(timeInterval - daysSinceBasis) : null;
 
 			rows.push({
 				installation: inst,
@@ -115,7 +126,12 @@
 
 			const inspDist = inspectionDistanceMeters(row.component);
 			const inspTime = inspectionTimeDays(row.component);
-			const daysSinceInstall = (now - Date.parse(row.installation.installed_at)) / 86_400_000;
+			const rowServiced = servicedByComponent[row.component.id!] ?? [];
+			const daysSinceInstall = daysSinceTimeBasis(
+				row.installation.installed_at,
+				rowServiced,
+				todayIso
+			);
 			const needsInspection =
 				(inspTime != null && daysSinceInstall >= inspTime) ||
 				(inspDist != null && row.wearMeters >= inspDist);

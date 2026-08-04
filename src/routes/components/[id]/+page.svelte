@@ -12,7 +12,10 @@
 		replacementTimeDays,
 		componentLabel,
 		componentTypeLabel,
-		serviceSchedule
+		serviceSchedule,
+		loadServicedDates,
+		timeIntervalFraction,
+		daysSinceTimeBasis
 	} from '$lib/intervals';
 	import {
 		formatDistance,
@@ -64,9 +67,19 @@
 		let timeFraction: number | null = null;
 		let remainingDays: number | null = null;
 		if (currentInstallation && timeInterval != null && timeInterval > 0) {
-			const daysSinceInstall =
-				(Date.now() - Date.parse(currentInstallation.installed_at)) / 86_400_000;
-			timeFraction = daysSinceInstall / timeInterval;
+			const serviced = (await loadServicedDates([componentId]))[componentId] ?? [];
+			const todayIso = new Date().toISOString();
+			const daysSinceInstall = daysSinceTimeBasis(
+				currentInstallation.installed_at,
+				serviced,
+				todayIso
+			);
+			timeFraction = timeIntervalFraction(
+				currentInstallation.installed_at,
+				serviced,
+				timeInterval,
+				todayIso
+			);
 			remainingDays = Math.round(timeInterval - daysSinceInstall);
 		}
 		const urgencyFraction = Math.max(distanceFraction ?? 0, timeFraction ?? 0);

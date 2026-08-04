@@ -4,7 +4,10 @@ import {
 	replacementDistanceMeters,
 	replacementTimeDays,
 	componentLabel,
-	loadCustomTypes
+	loadCustomTypes,
+	loadServicedDates,
+	daysSinceTimeBasis,
+	timeIntervalFraction
 } from '$lib/intervals';
 import { metersToDisplayUnit, distanceLabel } from '$lib/units';
 import { isCapacitorNative } from '$lib/platform';
@@ -112,7 +115,11 @@ export async function runNotificationCheck(): Promise<void> {
 	if (active.length === 0) return;
 
 	const components = await db.components.bulkGet(active.map((i) => i.component_id));
+	const servicedByComponent = await loadServicedDates(
+		components.filter((c) => c && c.id !== undefined).map((c) => c!.id!)
+	);
 	const now = Date.now();
+	const todayIso = new Date(now).toISOString();
 
 	for (let idx = 0; idx < active.length; idx++) {
 		const inst = active[idx];
@@ -124,12 +131,12 @@ export async function runNotificationCheck(): Promise<void> {
 		const wearMeters = await componentWear(component.id);
 		const distInterval = replacementDistanceMeters(component);
 		const timeInterval = replacementTimeDays(component);
+		const serviced = servicedByComponent[component.id] ?? [];
 
 		const distanceFraction =
 			distInterval != null && distInterval > 0 ? wearMeters / distInterval : null;
-		const daysSinceInstall = (now - Date.parse(inst.installed_at)) / 86_400_000;
-		const timeFraction =
-			timeInterval != null && timeInterval > 0 ? daysSinceInstall / timeInterval : null;
+		const daysSinceInstall = daysSinceTimeBasis(inst.installed_at, serviced, todayIso);
+		const timeFraction = timeIntervalFraction(inst.installed_at, serviced, timeInterval, todayIso);
 		const urgencyPct = Math.max(distanceFraction ?? 0, timeFraction ?? 0) * 100;
 
 		const thresholds = getNotificationThresholds(

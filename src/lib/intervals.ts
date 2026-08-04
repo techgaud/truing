@@ -75,6 +75,57 @@ export function inspectionTimeDays(component: Component): number | null {
 	return null;
 }
 
+// Time-based service intervals reset when a component is serviced. The clock
+// for a time interval runs from whichever is latest: the current install date
+// or the most recent 'serviced' event. These three helpers are pure: the
+// serviced dates and today are passed in, so a test can pin any moment.
+export function timeBasisStart(installedAt: string, servicedAt: readonly string[]): string {
+	let basis = installedAt;
+	let basisMs = Date.parse(installedAt);
+	for (const s of servicedAt) {
+		const ms = Date.parse(s);
+		if (!Number.isNaN(ms) && ms > basisMs) {
+			basis = s;
+			basisMs = ms;
+		}
+	}
+	return basis;
+}
+
+export function daysSinceTimeBasis(
+	installedAt: string,
+	servicedAt: readonly string[],
+	today: string
+): number {
+	return (Date.parse(today) - Date.parse(timeBasisStart(installedAt, servicedAt))) / 86_400_000;
+}
+
+export function timeIntervalFraction(
+	installedAt: string,
+	servicedAt: readonly string[],
+	timeIntervalDays: number | null,
+	today: string
+): number | null {
+	if (timeIntervalDays == null || timeIntervalDays <= 0) return null;
+	return daysSinceTimeBasis(installedAt, servicedAt, today) / timeIntervalDays;
+}
+
+// Edge helper: load the 'serviced' event dates for a set of components, keyed
+// by component id, so the callers above can feed the pure functions.
+export async function loadServicedDates(componentIds: number[]): Promise<Record<number, string[]>> {
+	const map: Record<number, string[]> = {};
+	if (componentIds.length === 0) return map;
+	const entries = await db.service_log
+		.where('component_id')
+		.anyOf(componentIds)
+		.and((e) => e.action === 'serviced')
+		.toArray();
+	for (const e of entries) {
+		(map[e.component_id] ??= []).push(e.performed_at);
+	}
+	return map;
+}
+
 export function componentLabel(component: Component): string {
 	if (component.name) return component.name;
 	return componentTypeLabel(component.type);
