@@ -2,6 +2,7 @@ import { db } from './db';
 import { componentWear } from './wear';
 import { componentLabel } from './intervals';
 import { getUnitPreference, metersToDisplayUnit } from './units';
+import { logError } from './errors';
 
 const METERS_PER_MILE = 1609.344;
 
@@ -201,7 +202,12 @@ export async function shareText(text: string, photo?: Blob): Promise<boolean> {
 			}
 			return true;
 		} catch (err) {
-			console.error('Capacitor share failed:', err);
+			void logError(
+				'E0000',
+				'Capacitor share failed',
+				undefined,
+				err instanceof Error ? err.stack : String(err)
+			);
 			return false;
 		}
 	}

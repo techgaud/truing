@@ -38,8 +38,32 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		// Studio banned patterns (Osgood ENGINEERING.md parts 5 and 8). These are
+		// fail-closed gates, not conventions: the codebase is clean today only by
+		// discipline, and discipline is what the gates exist to replace.
+		rules: {
+			'@typescript-eslint/no-explicit-any': 'error',
+			'@typescript-eslint/ban-ts-comment': [
+				'error',
+				{ 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true }
+			],
+			'no-console': 'error',
+			'no-eval': 'error',
+			'no-restricted-properties': [
+				'error',
+				{
+					object: 'Math',
+					property: 'random',
+					message:
+						'Math.random is banned. Use crypto.getRandomValues for any randomness that needs to be unpredictable.'
+				}
+			]
+		}
+	},
+	{
+		// Build and CI scripts are node tools that report to the terminal. The
+		// no-console ban is for app runtime code, not for these.
+		files: ['scripts/**', '**/*.config.js', '**/*.config.ts'],
+		rules: { 'no-console': 'off' }
 	}
 );
