@@ -48,3 +48,10 @@ TODO.local.md
 android/app/build
 ios/App/build
 ios/App/Pods
+
+# Internal knowledge (agent init, migration notes, dev/design references) is
+# versioned centrally in the projects-docs repo, not in this public repo. State
+# lives in Vikunja, not a TODO file.
+CLAUDE.md
+docs/
+TODO.md
